@@ -1,5 +1,6 @@
 mod enemy;
 mod events;
+mod gamepad;
 mod player;
 mod resources;
 mod sprites;
@@ -11,6 +12,7 @@ use events::*;
 use resources::*;
 
 use crate::enemy::EnemyPlugin;
+use crate::gamepad::GamepadPlugin;
 use crate::player::PlayerPlugin;
 use crate::sprites::SpritePlugin;
 use crate::ui::UiPlugin;
@@ -58,6 +60,7 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(GamepadPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(SpritePlugin)

@@ -10,11 +10,6 @@ pub struct Lives {
     pub lives: usize,
 }
 
-// #[derive(Resource)]
-// pub struct CarSpeed {
-//     pub speed: f32,
-// }
-
 #[derive(Resource)]
 pub struct SpawnTimer(pub Timer);
 
