@@ -1,4 +1,4 @@
-mod car;
+mod enemy;
 mod events;
 mod player;
 mod resources;
@@ -10,7 +10,7 @@ use bevy::prelude::*;
 use events::*;
 use resources::*;
 
-use crate::car::CarPlugin;
+use crate::enemy::EnemyPlugin;
 use crate::player::PlayerPlugin;
 use crate::sprites::SpritePlugin;
 use crate::ui::UiPlugin;
@@ -61,7 +61,7 @@ fn main() {
         .add_plugins(UiPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(SpritePlugin)
-        .add_plugins(car::CarPlugin)
+        .add_plugins(EnemyPlugin)
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, bevy::window::close_on_esc)
         .add_systems(Update, toggle_gamestate.run_if(in_state(AppState::InGame)))

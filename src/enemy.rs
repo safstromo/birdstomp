@@ -1,36 +1,30 @@
 // use crate::collisions::Collider;
-use crate::resources::{DifficultyTimer, SpawnTimer};
+use crate::player::Player;
+use crate::resources::SpawnTimer;
 use crate::{AppState, GameState, LEFT_WALL, RIGHT_WALL, TOP_WALL};
 use bevy::prelude::*;
 use rand::Rng;
 
 use crate::sprites::{AnimationIndices, AnimationTimer};
 
-const SPEED: f32 = 500.0;
-const INITIAL_CAR_DIRECTION: Vec2 = Vec2::new(0.0, -0.5);
-pub const INITIAL_CAR_SPEED: f32 = 400.0;
-pub const CAR_SIZE: Vec2 = Vec2::new(20.0, 50.0);
+pub const INITIAL_SPEED: f32 = 400.0;
 
-pub struct CarPlugin;
+pub struct EnemyPlugin;
 
-impl Plugin for CarPlugin {
+impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SpawnTimer(Timer::from_seconds(0.1, TimerMode::Repeating)))
-            .insert_resource(DifficultyTimer(Timer::from_seconds(
-                1.0,
-                TimerMode::Repeating,
-            )))
             .add_systems(
                 FixedUpdate,
-                (spawn_car, apply_velocity)
+                (spawn_enemy, move_enemy_toward_player)
                     .run_if(in_state(AppState::InGame))
                     .run_if(in_state(GameState::Running)),
             )
-            .add_systems(OnExit(AppState::InGame), despawn_cars);
+            .add_systems(OnExit(AppState::InGame), despawn_enemy);
     }
 }
 
-fn spawn_car(
+fn spawn_enemy(
     mut commands: Commands,
     time: Res<Time>,
     mut timer: ResMut<SpawnTimer>,
@@ -59,35 +53,30 @@ fn spawn_car(
             },
             animation_indices,
             AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-            Car,
-            Velocity(INITIAL_CAR_DIRECTION.normalize() * SPEED),
+            Enemy {
+                speed: INITIAL_SPEED,
+                health: 100.0,
+            },
             // Collider,
         ));
     }
 }
 
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time_step: Res<Time<Fixed>>) {
-    for (mut transform, velocity) in &mut query {
-        transform.translation.x += velocity.x * time_step.delta_seconds();
-        transform.translation.y += velocity.y * time_step.delta_seconds();
+fn move_enemy_toward_player(
+    mut query: Query<(&mut Transform, &Enemy)>,
+    player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
+) {
+    for (mut transform, enemy) in query.iter_mut() {
+        let player_transform = player_query.single();
+        let direction = player_transform.translation - transform.translation;
+        let direction = direction.normalize();
+        transform.translation += direction * enemy.speed * 0.01;
     }
 }
-//
-// fn increase_difficulty(
-//     time: Res<Time>,
-//     mut timer: ResMut<DifficultyTimer>,
-//     mut car_speed: ResMut<CarSpeed>,
-// ) {
-//     timer.0.tick(time.delta());
-//
-//     if timer.0.just_finished() {
-//         car_speed.speed += 20.0;
-//     }
-// }
 
-fn despawn_cars(mut commands: Commands, cars_query: Query<Entity, With<Car>>) {
-    for car in cars_query.iter() {
-        commands.entity(car).despawn();
+fn despawn_enemy(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {
+    for enemy in enemy_query.iter() {
+        commands.entity(enemy).despawn();
     }
 }
 
@@ -95,4 +84,7 @@ fn despawn_cars(mut commands: Commands, cars_query: Query<Entity, With<Car>>) {
 pub struct Velocity(pub Vec2);
 
 #[derive(Component, Debug)]
-pub struct Car;
+pub struct Enemy {
+    pub speed: f32,
+    pub health: f32,
+}
