@@ -3,7 +3,7 @@
 use bevy::{
     input::gamepad::{
         GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadButtonInput,
-        GamepadConnectionEvent, GamepadEvent,
+        GamepadConnectionEvent,
     },
     prelude::*,
 };
@@ -14,7 +14,7 @@ pub struct GamepadPlugin;
 
 impl Plugin for GamepadPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (gamepad_events));
+        app.add_systems(Update, gamepad_events);
     }
 }
 
