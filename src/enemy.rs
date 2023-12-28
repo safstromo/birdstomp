@@ -70,7 +70,7 @@ fn spawn_enemy(
     // });
 }
 
-//TODO: move towatds closest player
+//TODO: move towatds ball
 
 fn move_enemy_toward_player(
     mut query: Query<(&mut Transform, &mut Enemy)>,

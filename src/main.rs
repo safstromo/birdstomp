@@ -1,3 +1,4 @@
+mod ball;
 mod enemy;
 mod events;
 mod gamepad;
@@ -12,6 +13,7 @@ use bevy_rapier2d::prelude::*;
 use events::*;
 use resources::*;
 
+use crate::ball::BallPlugin;
 use crate::enemy::EnemyPlugin;
 use crate::gamepad::GamepadPlugin;
 use crate::player::PlayerPlugin;
@@ -72,6 +74,7 @@ fn main() {
         .add_plugins(PlayerPlugin)
         .add_plugins(SpritePlugin)
         .add_plugins(EnemyPlugin)
+        .add_plugins(BallPlugin)
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, bevy::window::close_on_esc)
         .add_systems(Update, toggle_gamestate.run_if(in_state(AppState::InGame)))
