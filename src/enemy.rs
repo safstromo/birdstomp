@@ -60,12 +60,14 @@ fn spawn_enemy(
                 health: 100.0,
             },
         ))
-        .insert(RigidBody::Fixed)
-        .with_children(|children| {
-            children
-                .spawn(Collider::cuboid(6.0, 10.0))
-                .insert(TransformBundle::from(Transform::from_xyz(4.0, 0.0, 0.0)));
-        });
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::cuboid(6.0, 10.0));
+    // .with_children(|children| {
+    //     children
+    //         .spawn(Collider::cuboid(6.0, 10.0))
+    //         .insert(TransformBundle::from(Transform::from_xyz(4.0, 0.0, 0.0)));
+    //
+    // });
 }
 
 //TODO: move towatds closest player

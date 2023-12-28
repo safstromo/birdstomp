@@ -30,26 +30,26 @@ fn gamepad_events(
     // this event is emitted.
     mut button_input_events: EventReader<GamepadButtonInput>,
 ) {
-    for connection_event in connection_events.read() {
-        info!("{:?}", connection_event);
-    }
-    for axis_changed_event in axis_changed_events.read() {
-        info!(
-            "{:?} of {:?} is changed to {}",
-            axis_changed_event.axis_type, axis_changed_event.gamepad, axis_changed_event.value
-        );
-    }
-    for button_changed_event in button_changed_events.read() {
-        info!(
-            "{:?} of {:?} is changed to {}",
-            button_changed_event.button_type,
-            button_changed_event.gamepad,
-            button_changed_event.value
-        );
-    }
-    for button_input_event in button_input_events.read() {
-        info!("{:?}", button_input_event);
-    }
+    // for connection_event in connection_events.read() {
+    //     info!("{:?}", connection_event);
+    // }
+    // for axis_changed_event in axis_changed_events.read() {
+    //     info!(
+    //         "{:?} of {:?} is changed to {}",
+    //         axis_changed_event.axis_type, axis_changed_event.gamepad, axis_changed_event.value
+    //     );
+    // }
+    // for button_changed_event in button_changed_events.read() {
+    //     info!(
+    //         "{:?} of {:?} is changed to {}",
+    //         button_changed_event.button_type,
+    //         button_changed_event.gamepad,
+    //         button_changed_event.value
+    //     );
+    // }
+    // for button_input_event in button_input_events.read() {
+    //     info!("{:?}", button_input_event);
+    // }
 }
 
 // If you require in-frame relative event ordering, you can also read the `Gamepad` event

@@ -1,3 +1,4 @@
+use crate::enemy::Enemy;
 use crate::sprites::{AnimationIndices, AnimationTimer};
 use crate::{AppState, GameState, BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 use bevy::{input::gamepad::GamepadAxisChangedEvent, prelude::*};
@@ -12,7 +13,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player).add_systems(
             Update,
-            (move_player, move_player_with_gamepad)
+            (move_player, move_player_with_gamepad, collision_with_enemy)
                 .run_if(in_state(AppState::InGame))
                 .run_if(in_state(GameState::Running)),
         );
@@ -64,11 +65,16 @@ fn spawn_player(
         ))
         .insert(RigidBody::KinematicPositionBased)
         .insert(KinematicCharacterController::default())
-        .with_children(|children| {
-            children
-                .spawn(Collider::ball(10.0))
-                .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)));
-        });
+        .insert(Collider::ball(10.0))
+        .insert(ActiveEvents::COLLISION_EVENTS);
+
+    //Todo the child collider gets different index than the parent
+    // .with_children(|children| {
+    //     children
+    //         .spawn(Collider::ball(10.0))
+    //         .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)))
+    //         .insert(ActiveEvents::COLLISION_EVENTS);
+    // });
 
     commands
         .spawn((
@@ -87,11 +93,16 @@ fn spawn_player(
         ))
         .insert(RigidBody::KinematicPositionBased)
         .insert(KinematicCharacterController::default())
-        .with_children(|children| {
-            children
-                .spawn(Collider::ball(10.0))
-                .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)));
-        });
+        .insert(Collider::ball(10.0))
+        .insert(ActiveEvents::COLLISION_EVENTS);
+
+    //TODO the child collider gets different index than the parent
+    // .with_children(|children| {
+    //     children
+    //         .spawn(Collider::ball(10.0))
+    //         .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)))
+    //         .insert(ActiveEvents::COLLISION_EVENTS);
+    // });
 }
 
 fn move_player(
@@ -190,4 +201,41 @@ fn move_player_with_gamepad(
     player2_transform.translation.x =
         new_player2_position_horizontal.clamp(left_bound, right_bound);
     player2_transform.translation.y = new_player2_position_vertical.clamp(bottom_bound, top_bound);
+}
+
+fn collision_with_enemy(
+    mut commands: Commands,
+    enemy_query: Query<Entity, With<Enemy>>,
+    player1_query: Query<Entity, With<Player>>,
+    player2_query: Query<Entity, With<Player2>>,
+    rapier_context: Res<RapierContext>,
+    mut score: ResMut<crate::Score>,
+    mut lives: ResMut<crate::Lives>,
+) {
+    let player1 = player1_query.single();
+    let player2 = player2_query.single();
+    let enemy = enemy_query.single();
+
+    if let Some(contact_pair) = rapier_context.contact_pair(player1, enemy) {
+        if contact_pair.has_any_active_contacts() {
+            println!(
+                "Contact  player {} with enemy {}:",
+                player1.index(),
+                enemy.index()
+            );
+            commands.insert_resource(NextState(Some(GameState::Paused)));
+            lives.lives -= 1;
+        }
+    }
+    if let Some(contact_pair2) = rapier_context.contact_pair(player2, enemy) {
+        if contact_pair2.has_any_active_contacts() {
+            println!(
+                "Contact  player {} with enemy {}:",
+                player2.index(),
+                enemy.index()
+            );
+            commands.insert_resource(NextState(Some(GameState::Paused)));
+            score.score += 1;
+        }
+    }
 }

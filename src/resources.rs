@@ -25,7 +25,7 @@ pub struct CountdownTimer {
 impl CountdownTimer {
     pub fn new() -> Self {
         Self {
-            duration: 4,
+            duration: 2,
             timer: Timer::from_seconds(1.0, TimerMode::Repeating),
         }
     }
