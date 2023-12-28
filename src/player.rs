@@ -23,13 +23,15 @@ impl Plugin for PlayerPlugin {
 #[derive(Component)]
 pub struct Player {
     pub health: f32,
-    velocity: Vec2,
+    pub velocity: Vec2,
+    pub direction: Vec2,
 }
 
 #[derive(Component)]
 pub struct Player2 {
     pub health: f32,
-    velocity: Vec2,
+    pub velocity: Vec2,
+    pub direction: Vec2,
 }
 
 fn spawn_player(
@@ -61,6 +63,7 @@ fn spawn_player(
             Player {
                 health: 100.0,
                 velocity: Vec2::new(0.0, 0.0),
+                direction: Vec2::new(0.0, 0.0),
             }, // Collider,
         ))
         .insert(RigidBody::KinematicPositionBased)
@@ -89,6 +92,7 @@ fn spawn_player(
             Player2 {
                 health: 100.0,
                 velocity: Vec2::new(0.0, 0.0),
+                direction: Vec2::new(0.0, 0.0),
             }, // Collider,
         ))
         .insert(RigidBody::KinematicPositionBased)
@@ -164,15 +168,19 @@ fn move_player_with_gamepad(
         match event.axis_type {
             GamepadAxisType::LeftStickX => {
                 player1.velocity.x = event.value;
+                player1.direction.x = event.value;
             }
             GamepadAxisType::LeftStickY => {
                 player1.velocity.y = event.value;
+                player1.direction.y = event.value;
             }
             GamepadAxisType::RightStickX => {
                 player2.velocity.x = event.value;
+                player2.direction.x = event.value;
             }
             GamepadAxisType::RightStickY => {
                 player2.velocity.y = event.value;
+                player2.direction.y = event.value;
             }
             _ => {}
         }
@@ -235,7 +243,6 @@ fn collision_with_enemy(
                 enemy.index()
             );
             commands.insert_resource(NextState(Some(GameState::Paused)));
-            commands.entity(enemy).despawn();
             score.score += 1;
         }
     }

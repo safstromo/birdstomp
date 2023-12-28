@@ -8,9 +8,10 @@ pub struct BallPlugin;
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_ball)
-            .add_systems(Update, (snap_to_player, move_ball));
+            .add_systems(Update, (snap_to_player, move_ball, throw_ball));
     }
 }
+const BALL_SPEED: f32 = 500.0;
 
 #[derive(Component)]
 pub struct Ball {
@@ -40,7 +41,6 @@ fn spawn_ball(
         ))
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(30.0))
-        .insert(Sensor)
         .insert(ActiveEvents::COLLISION_EVENTS);
 }
 
@@ -87,21 +87,40 @@ fn snap_to_player(
     }
 }
 
+//TODO: Fix ball movement/velocity
 fn move_ball(
-    mut ball_query: Query<&mut Transform, With<Ball>>,
+    mut ball_query: Query<(&mut Ball, &mut Transform, With<Ball>)>,
     ballhandler: Query<&mut Transform, (With<BallHandler>, Without<Ball>)>,
+) {
+    let (ball, mut ball_transform, ()) = ball_query.single_mut();
+
+    if ballhandler.is_empty() {
+        ball_transform.translation =
+            ball_transform.translation + Vec3::new(ball.velocity.x, ball.velocity.y, 0.0) * 0.1;
+        return;
+    }
+
+    let ballhandler = ballhandler.single();
+
+    ball_transform.translation = ballhandler.translation;
+}
+
+//TODO: Fix input key and controller
+fn throw_ball(
+    mut commands: Commands,
+    ballhandler: Query<(Entity, &mut Player, With<BallHandler>)>,
+    mut ball_query: Query<&mut Ball>,
+    keyboard_input: Res<Input<KeyCode>>,
 ) {
     if ballhandler.is_empty() {
         return;
     }
 
-    let mut ball_transform = ball_query.single_mut();
-    let ballhandler = ballhandler.single();
-    // move ball to ballhandler
+    let (entity, ballhandler, _) = ballhandler.single();
+    let mut ball = ball_query.single_mut();
 
-    ball_transform.translation = ballhandler.translation;
+    if keyboard_input.pressed(KeyCode::T) {
+        ball.velocity = ballhandler.direction * BALL_SPEED;
+        commands.entity(entity).remove::<BallHandler>();
+    }
 }
-
-// TODO - throw ball
-
-fn throw_ball() {}

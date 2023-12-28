@@ -29,6 +29,9 @@ const RIGHT_WALL: f32 = 450.;
 const BOTTOM_WALL: f32 = -300.;
 const TOP_WALL: f32 = 300.;
 
+const FLOOR_THICKNESS: f32 = 5.0;
+const COLOR_FLOOR: Color = Color::rgb(0.45, 0.55, 0.66);
+
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash, States)]
 pub enum AppState {
     #[default]
@@ -62,7 +65,7 @@ fn main() {
                 .set(ImagePlugin::default_nearest())
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "RoadStomp".into(),
+                        title: "Stomp".into(),
                         resolution: (900., 600.).into(),
                         ..default()
                     }),
@@ -75,7 +78,7 @@ fn main() {
         .add_plugins(SpritePlugin)
         .add_plugins(EnemyPlugin)
         .add_plugins(BallPlugin)
-        .add_systems(Startup, spawn_camera)
+        .add_systems(Startup, (spawn_camera, spawn_map_borders))
         .add_systems(Update, bevy::window::close_on_esc)
         .add_systems(Update, toggle_gamestate.run_if(in_state(AppState::InGame)))
         .run();
@@ -98,4 +101,70 @@ fn toggle_gamestate(
         println!("Gamestate set to: Running");
         commands.insert_resource(NextState(Some(GameState::Running)));
     }
+}
+
+fn spawn_map_borders(mut commands: Commands) {
+    commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: COLOR_FLOOR,
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, BOTTOM_WALL + (FLOOR_THICKNESS / 2.0), 0.0),
+                scale: Vec3::new(900.0, FLOOR_THICKNESS, 1.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(RigidBody::Fixed)
+        .insert(Collider::cuboid(0.5, 0.5));
+
+    commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: COLOR_FLOOR,
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, TOP_WALL + (FLOOR_THICKNESS / 2.0), 0.0),
+                scale: Vec3::new(900.0, FLOOR_THICKNESS, 1.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(RigidBody::Fixed)
+        .insert(Collider::cuboid(0.5, 0.5));
+
+    commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: COLOR_FLOOR,
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(LEFT_WALL + (FLOOR_THICKNESS / 2.0), 0.0, 0.0),
+                scale: Vec3::new(FLOOR_THICKNESS, 600.0, 1.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(RigidBody::Fixed)
+        .insert(Collider::cuboid(0.5, 0.5));
+
+    commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: COLOR_FLOOR,
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(RIGHT_WALL + (FLOOR_THICKNESS / 2.0), 0.0, 0.0),
+                scale: Vec3::new(FLOOR_THICKNESS, 600.0, 1.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(RigidBody::Fixed)
+        .insert(Collider::cuboid(0.5, 0.5));
 }
