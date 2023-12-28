@@ -1,6 +1,7 @@
 use crate::sprites::{AnimationIndices, AnimationTimer};
 use crate::{AppState, GameState, BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 use bevy::{input::gamepad::GamepadAxisChangedEvent, prelude::*};
+use bevy_rapier2d::prelude::*;
 const PLAYER_SPEED: f32 = 500.0;
 const PLAYER_PADDING: f32 = 10.0;
 const PLAYER_SIZE: Vec2 = Vec2::new(5.0, 8.0);
@@ -46,35 +47,51 @@ fn spawn_player(
     };
     let animation_indices2 = AnimationIndices { first: 0, last: 4 };
 
-    commands.spawn((
-        SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle.clone(),
-            sprite: TextureAtlasSprite::new(animation_indices.first),
-            transform: Transform::from_xyz(50.0, -250., 2.0),
-            ..default()
-        },
-        animation_indices,
-        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        Player {
-            health: 100.0,
-            velocity: Vec2::new(0.0, 0.0),
-        }, // Collider,
-    ));
+    commands
+        .spawn((
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(animation_indices.first),
+                transform: Transform::from_xyz(50.0, -250., 2.0),
+                ..default()
+            },
+            animation_indices,
+            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+            Player {
+                health: 100.0,
+                velocity: Vec2::new(0.0, 0.0),
+            }, // Collider,
+        ))
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(KinematicCharacterController::default())
+        .with_children(|children| {
+            children
+                .spawn(Collider::ball(10.0))
+                .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)));
+        });
 
-    commands.spawn((
-        SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
-            sprite: TextureAtlasSprite::new(animation_indices2.first),
-            transform: Transform::from_xyz(-50.0, -250., 2.0),
-            ..default()
-        },
-        animation_indices2,
-        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        Player2 {
-            health: 100.0,
-            velocity: Vec2::new(0.0, 0.0),
-        }, // Collider,
-    ));
+    commands
+        .spawn((
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle,
+                sprite: TextureAtlasSprite::new(animation_indices2.first),
+                transform: Transform::from_xyz(-50.0, -250., 2.0),
+                ..default()
+            },
+            animation_indices2,
+            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+            Player2 {
+                health: 100.0,
+                velocity: Vec2::new(0.0, 0.0),
+            }, // Collider,
+        ))
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(KinematicCharacterController::default())
+        .with_children(|children| {
+            children
+                .spawn(Collider::ball(10.0))
+                .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)));
+        });
 }
 
 fn move_player(

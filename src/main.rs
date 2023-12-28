@@ -7,6 +7,7 @@ mod sprites;
 mod ui;
 
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 use events::*;
 use resources::*;
@@ -47,7 +48,9 @@ fn main() {
         .add_state::<AppState>()
         .insert_resource(Lives { lives: 5 })
         .insert_resource(Score { score: 0 })
-        .add_event::<CollisionEvent>()
+        // .add_event::<CollisionEvent>()
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())

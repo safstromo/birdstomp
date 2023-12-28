@@ -63,6 +63,8 @@ fn spawn_enemy(
     // }
 }
 
+//TODO: move towatds closest player
+
 fn move_enemy_toward_player(
     mut query: Query<(&mut Transform, &mut Enemy)>,
     player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
