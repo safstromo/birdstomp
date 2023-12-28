@@ -1,8 +1,8 @@
-// use crate::collisions::Collider;
 use crate::player::Player;
 // use crate::resources::SpawnTimer;
 use crate::{AppState, GameState, LEFT_WALL, RIGHT_WALL, TOP_WALL};
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use rand::Rng;
 
 use crate::sprites::{AnimationIndices, AnimationTimer};
@@ -40,27 +40,32 @@ fn spawn_enemy(
     // Use only the subset of sprites in the sheet that make up the run animation
     let animation_indices = AnimationIndices { first: 0, last: 5 };
 
-    commands.spawn((
-        SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
-            sprite: TextureAtlasSprite::new(animation_indices.first),
-            transform: Transform {
-                translation: Vec3::new(rng.gen_range(LEFT_WALL..RIGHT_WALL), TOP_WALL, 1.),
-                scale: Vec3::splat(2.0),
+    commands
+        .spawn((
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle,
+                sprite: TextureAtlasSprite::new(animation_indices.first),
+                transform: Transform {
+                    translation: Vec3::new(rng.gen_range(LEFT_WALL..RIGHT_WALL), TOP_WALL, 1.),
+                    scale: Vec3::splat(2.0),
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        },
-        animation_indices,
-        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        Enemy {
-            speed: INITIAL_SPEED,
-            current_speed: INITIAL_SPEED,
-            health: 100.0,
-        },
-        // Collider,
-    ));
-    // }
+            animation_indices,
+            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+            Enemy {
+                speed: INITIAL_SPEED,
+                current_speed: INITIAL_SPEED,
+                health: 100.0,
+            },
+        ))
+        .insert(RigidBody::Fixed)
+        .with_children(|children| {
+            children
+                .spawn(Collider::cuboid(6.0, 10.0))
+                .insert(TransformBundle::from(Transform::from_xyz(4.0, 0.0, 0.0)));
+        });
 }
 
 //TODO: move towatds closest player

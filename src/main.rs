@@ -51,6 +51,10 @@ fn main() {
         // .add_event::<CollisionEvent>()
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
+        .insert_resource(RapierConfiguration {
+            gravity: Vect::ZERO,
+            ..Default::default()
+        })
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
