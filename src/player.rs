@@ -34,6 +34,11 @@ pub struct Player2 {
     pub direction: Vec2,
 }
 
+#[derive(Component)]
+pub struct PlayerDirection {
+    pub direction: Vec2,
+}
+
 fn spawn_player(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -65,6 +70,9 @@ fn spawn_player(
                 velocity: Vec2::new(0.0, 0.0),
                 direction: Vec2::new(0.0, 0.0),
             }, // Collider,
+            PlayerDirection {
+                direction: Vec2::new(0.0, 0.0),
+            },
         ))
         .insert(RigidBody::KinematicPositionBased)
         .insert(KinematicCharacterController::default())
@@ -94,6 +102,9 @@ fn spawn_player(
                 velocity: Vec2::new(0.0, 0.0),
                 direction: Vec2::new(0.0, 0.0),
             }, // Collider,
+            PlayerDirection {
+                direction: Vec2::new(0.0, 0.0),
+            },
         ))
         .insert(RigidBody::KinematicPositionBased)
         .insert(KinematicCharacterController::default())
@@ -151,13 +162,13 @@ fn move_player(
 fn move_player_with_gamepad(
     mut query: Query<&mut Transform, (With<Player>, Without<Player2>)>,
     mut query2: Query<&mut Transform, (With<Player2>, Without<Player>)>,
-    mut player: Query<&mut Player>,
-    mut player2: Query<&mut Player2>,
+    mut player: Query<(&mut Player, &mut PlayerDirection, Without<Player2>)>,
+    mut player2: Query<(&mut Player2, &mut PlayerDirection, Without<Player>)>,
     gamepad_axis_changed_events: Res<Events<GamepadAxisChangedEvent>>,
     time_step: Res<Time<Fixed>>,
 ) {
-    let mut player1 = player.single_mut();
-    let mut player2 = player2.single_mut();
+    let (mut player1, mut player1_direction, ()) = player.single_mut();
+    let (mut player2, mut player2_direction, ()) = player2.single_mut();
     let mut player1_transform = query.single_mut();
     let mut player2_transform = query2.single_mut();
     //Stick movement
@@ -169,18 +180,22 @@ fn move_player_with_gamepad(
             GamepadAxisType::LeftStickX => {
                 player1.velocity.x = event.value;
                 player1.direction.x = event.value;
+                player1_direction.direction.x = event.value;
             }
             GamepadAxisType::LeftStickY => {
                 player1.velocity.y = event.value;
                 player1.direction.y = event.value;
+                player1_direction.direction.y = event.value;
             }
             GamepadAxisType::RightStickX => {
                 player2.velocity.x = event.value;
                 player2.direction.x = event.value;
+                player2_direction.direction.x = event.value;
             }
             GamepadAxisType::RightStickY => {
                 player2.velocity.y = event.value;
                 player2.direction.y = event.value;
+                player2_direction.direction.y = event.value;
             }
             _ => {}
         }
