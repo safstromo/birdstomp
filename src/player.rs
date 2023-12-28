@@ -235,6 +235,7 @@ fn collision_with_enemy(
                 enemy.index()
             );
             commands.insert_resource(NextState(Some(GameState::Paused)));
+            commands.entity(enemy).despawn();
             score.score += 1;
         }
     }
