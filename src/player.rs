@@ -16,7 +16,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player).add_systems(
             Update,
-            (move_player,)
+            (move_player, collision_with_enemy)
                 .run_if(in_state(AppState::InGame))
                 .run_if(in_state(GameState::Running)),
         );
@@ -209,36 +209,25 @@ fn move_player(
 fn collision_with_enemy(
     mut commands: Commands,
     enemy_query: Query<Entity, With<Enemy>>,
-    player1_query: Query<Entity, With<Player>>,
-    player2_query: Query<Entity, With<Player2>>,
+    player_query: Query<Entity, With<NewPlayer>>,
     rapier_context: Res<RapierContext>,
     mut score: ResMut<crate::Score>,
     mut lives: ResMut<crate::Lives>,
 ) {
-    let player1 = player1_query.single();
-    let player2 = player2_query.single();
     let enemy = enemy_query.single();
 
-    if let Some(contact_pair) = rapier_context.contact_pair(player1, enemy) {
-        if contact_pair.has_any_active_contacts() {
-            println!(
-                "Contact  player {} with enemy {}:",
-                player1.index(),
-                enemy.index()
-            );
-            commands.insert_resource(NextState(Some(GameState::Paused)));
-            lives.lives -= 1;
-        }
-    }
-    if let Some(contact_pair2) = rapier_context.contact_pair(player2, enemy) {
-        if contact_pair2.has_any_active_contacts() {
-            println!(
-                "Contact  player {} with enemy {}:",
-                player2.index(),
-                enemy.index()
-            );
-            commands.insert_resource(NextState(Some(GameState::Paused)));
-            score.score += 1;
+    for player in player_query.iter() {
+        if let Some(contact_pair) = rapier_context.contact_pair(player, enemy) {
+            if contact_pair.has_any_active_contacts() {
+                println!(
+                    "Contact  player {} with enemy {}:",
+                    player.index(),
+                    enemy.index()
+                );
+                commands.insert_resource(NextState(Some(GameState::Paused)));
+                lives.lives -= 1;
+                score.score += 1;
+            }
         }
     }
 }

@@ -20,7 +20,7 @@ pub enum PlayerAction {
     Dash,
     Move,
 }
-
+//TODO: Set gamepads dynamically to players
 impl PlayerBundle {
     pub fn input_map(player: NewPlayer) -> InputMap<PlayerAction> {
         let mut input_map = match player {
@@ -29,7 +29,8 @@ impl PlayerBundle {
                 (KeyCode::D, PlayerAction::Right),
                 (KeyCode::W, PlayerAction::Up),
                 (KeyCode::S, PlayerAction::Down),
-                (KeyCode::T, PlayerAction::Throw),
+                (KeyCode::ShiftLeft, PlayerAction::Throw),
+                (KeyCode::ControlLeft, PlayerAction::Dash),
             ])
             // This is a quick and hacky solution:
             // you should coordinate with the `Gamepads` resource to determine the correct gamepad for each player
@@ -43,7 +44,8 @@ impl PlayerBundle {
                 (KeyCode::Right, PlayerAction::Right),
                 (KeyCode::Up, PlayerAction::Up),
                 (KeyCode::Down, PlayerAction::Down),
-                (KeyCode::ShiftLeft, PlayerAction::Throw),
+                (KeyCode::ShiftRight, PlayerAction::Throw),
+                (KeyCode::ControlRight, PlayerAction::Dash),
             ])
             .set_gamepad(Gamepad { id: 1 })
             .build(),
@@ -56,6 +58,7 @@ impl PlayerBundle {
             (GamepadButtonType::DPadUp, PlayerAction::Up),
             (GamepadButtonType::DPadDown, PlayerAction::Down),
             (GamepadButtonType::South, PlayerAction::Throw),
+            (GamepadButtonType::West, PlayerAction::Dash),
         ]);
 
         input_map.insert(DualAxis::left_stick(), PlayerAction::Move);
