@@ -1,5 +1,4 @@
-use crate::player::Player;
-// use crate::resources::SpawnTimer;
+use crate::ball::BallHandler;
 use crate::{AppState, GameState, LEFT_WALL, RIGHT_WALL, TOP_WALL};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
@@ -13,26 +12,33 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_enemy);
-        // .add_systems(
-        //     FixedUpdate,
-        //     (move_enemy_toward_player)
-        //         .run_if(in_state(AppState::InGame))
-        //         .run_if(in_state(GameState::Running)),
-        // )
-        // .add_systems(OnExit(AppState::InGame), despawn_enemy);
+        app.add_systems(Startup, spawn_enemy)
+            .add_systems(
+                FixedUpdate,
+                (move_enemy_toward_player)
+                    .run_if(in_state(AppState::InGame))
+                    .run_if(in_state(GameState::Running)),
+            )
+            .add_systems(OnExit(AppState::InGame), despawn_enemy);
     }
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct Velocity(pub Vec2);
+
+#[derive(Component, Debug)]
+pub struct Enemy {
+    pub speed: f32,
+    pub current_speed: f32,
+    pub health: f32,
 }
 
 fn spawn_enemy(
     mut commands: Commands,
-    // time: Res<Time>,
-    // mut timer: ResMut<SpawnTimer>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     let mut rng = rand::thread_rng();
-    // if timer.0.tick(time.delta()).just_finished() {
     let texture_handle = asset_server.load("monsters/tooth-walker/toothwalker-sheet.png");
     let texture_atlas =
         TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 6, 5, None, None);
@@ -62,59 +68,45 @@ fn spawn_enemy(
         ))
         .insert(RigidBody::Dynamic)
         .insert(Collider::cuboid(6.0, 10.0));
-    // .with_children(|children| {
-    //     children
-    //         .spawn(Collider::cuboid(6.0, 10.0))
-    //         .insert(TransformBundle::from(Transform::from_xyz(4.0, 0.0, 0.0)));
-    //
-    // });
 }
 
-//TODO: move towatds closest player
-
 fn move_enemy_toward_player(
-    mut query: Query<(&mut Transform, &mut Enemy)>,
-    player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
+    mut enemy_query: Query<(&mut Transform, &mut Enemy)>,
+    ballhandler_query: Query<&Transform, (With<BallHandler>, Without<Enemy>)>,
     time: Res<Time>,
 ) {
-    for (mut transform, mut enemy) in query.iter_mut() {
-        let player_transform = player_query.single();
-        let direction = player_transform.translation - transform.translation;
-        let direction = direction.normalize();
-
-        let distance = player_transform.translation.distance(transform.translation);
-
-        // println!("distance to player: {}", distance);
-        // println!("enemy speed: {}", enemy.speed);
-
-        //TODO adjust speed speeds and radius
-
-        // Slow down when close to the player.
-        let slow_down_radius = 100.0;
-        if distance < slow_down_radius {
-            enemy.speed = enemy.current_speed * 0.5;
-        }
-        if distance > slow_down_radius {
-            enemy.speed = enemy.current_speed;
-        }
-
-        transform.translation += direction * enemy.speed * time.delta_seconds();
-        enemy.current_speed += 0.8;
+    if ballhandler_query.is_empty() {
+        return;
     }
+
+    let ballhandler_transform = ballhandler_query.single();
+
+    let (mut enemy_transform, mut enemy) = enemy_query.single_mut();
+
+    let direction = ballhandler_transform.translation - enemy_transform.translation;
+    let direction = direction.normalize();
+
+    let distance = ballhandler_transform
+        .translation
+        .distance(enemy_transform.translation);
+
+    //TODO adjust speed speeds and radius
+
+    // Slow down when close to the player.
+    let slow_down_radius = 100.0;
+    if distance < slow_down_radius {
+        enemy.speed = enemy.current_speed * 0.5;
+    }
+    if distance > slow_down_radius {
+        enemy.speed = enemy.current_speed;
+    }
+
+    enemy_transform.translation += direction * enemy.speed * time.delta_seconds();
+    enemy.current_speed += 0.8;
 }
 
 fn despawn_enemy(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {
     for enemy in enemy_query.iter() {
         commands.entity(enemy).despawn();
     }
-}
-
-#[derive(Component, Deref, DerefMut)]
-pub struct Velocity(pub Vec2);
-
-#[derive(Component, Debug)]
-pub struct Enemy {
-    pub speed: f32,
-    pub current_speed: f32,
-    pub health: f32,
 }
