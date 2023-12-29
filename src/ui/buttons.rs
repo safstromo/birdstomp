@@ -1,5 +1,5 @@
 use crate::gamepad::PlayerAction;
-use crate::resources::{CountdownTimer, Lives, Score};
+use crate::resources::{CountdownTimer, Player1Lives, Player2Lives};
 use crate::ui::styles::*;
 use crate::AppState;
 use bevy::app::AppExit;
@@ -13,9 +13,9 @@ pub struct PlayButton;
 pub struct QuitButton;
 
 pub fn interact_with_play_button(
-    mut life: ResMut<Lives>,
+    mut life: ResMut<Player1Lives>,
     mut countdown: ResMut<CountdownTimer>,
-    mut score: ResMut<Score>,
+    mut score: ResMut<Player2Lives>,
     mut button_query: Query<
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<PlayButton>),
@@ -27,7 +27,7 @@ pub fn interact_with_play_button(
             Interaction::Pressed => {
                 *background_color = PRESSED_BUTTON_COLOR.into();
                 life.lives = 5;
-                score.score = 0;
+                score.lives = 5;
                 countdown.duration = 4;
                 app_state_next_state.set(AppState::InGame);
             }
@@ -42,9 +42,9 @@ pub fn interact_with_play_button(
 }
 
 pub fn start(
-    mut life: ResMut<Lives>,
+    mut life: ResMut<Player1Lives>,
     mut countdown: ResMut<CountdownTimer>,
-    mut score: ResMut<Score>,
+    mut score: ResMut<Player2Lives>,
     mut button_query: Query<(&mut BackgroundColor, With<PlayButton>)>,
     start_action: Query<&ActionState<PlayerAction>>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
@@ -55,7 +55,7 @@ pub fn start(
         if start.pressed(PlayerAction::Start) {
             *background_color = PRESSED_BUTTON_COLOR.into();
             life.lives = 5;
-            score.score = 0;
+            score.lives = 5;
             countdown.duration = 4;
             app_state_next_state.set(AppState::InGame);
         }

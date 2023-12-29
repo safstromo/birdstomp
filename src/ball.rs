@@ -1,8 +1,8 @@
 use crate::{
     gamepad::PlayerAction,
-    player::{NewPlayer, Player, PlayerDirection},
+    player::{NewPlayer, PlayerDirection},
 };
-use bevy::{input::gamepad::GamepadButtonChangedEvent, prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
 use leafwing_input_manager::prelude::*;
 
@@ -47,15 +47,12 @@ fn spawn_ball(
         .insert(ActiveEvents::COLLISION_EVENTS);
 }
 
-// TODO - Snap to player
-
 fn snap_to_player(
     mut commands: Commands,
     mut event_reader: EventReader<CollisionEvent>,
     ball_query: Query<Entity, With<Ball>>,
     players: Query<Entity, With<KinematicCharacterController>>,
     ballhandler: Query<Entity, With<BallHandler>>,
-    mut score: ResMut<crate::Score>, // TODO - remove this
 ) {
     let ball = ball_query.single();
 
@@ -69,14 +66,14 @@ fn snap_to_player(
                 if ball == *collider1 {
                     for player in players.iter() {
                         if player == *collider2 {
-                            handle_collision(&mut commands, &mut score, player);
+                            commands.entity(player).insert(BallHandler);
                         }
                     }
                 }
                 if ball == *collider2 {
                     for player in players.iter() {
                         if player == *collider1 {
-                            handle_collision(&mut commands, &mut score, player);
+                            commands.entity(player).insert(BallHandler);
                         }
                     }
                 }
@@ -84,16 +81,6 @@ fn snap_to_player(
             _ => {}
         }
     }
-}
-
-fn handle_collision(
-    commands: &mut Commands,
-    score: &mut ResMut<crate::Score>,
-    player_entity: Entity,
-) {
-    score.score += 1;
-    commands.entity(player_entity).insert(BallHandler);
-    println!("ball hit {:?}", player_entity);
 }
 
 //TODO: Fix ball movement/velocity
@@ -114,24 +101,20 @@ fn move_ball(
     ball_transform.translation = ballhandler.translation;
 }
 
-//TODO: Fix input key and controller
 fn throw_ball(
     mut commands: Commands,
     ballhandler: Query<(Entity, &mut PlayerDirection, With<BallHandler>)>,
     mut ball_query: Query<&mut Ball>,
-    mut query: Query<(&ActionState<PlayerAction>, &NewPlayer, Entity), With<NewPlayer>>,
+    mut query: Query<(&ActionState<PlayerAction>, Entity), With<NewPlayer>>,
 ) {
     if ballhandler.is_empty() {
         return;
     }
-    // let gamepad1 = gamepad.iter().next().unwrap();
-    // println!("gamepad1: {:?}", gamepad1);
 
     let (entity, player_direction, _) = ballhandler.single();
-    for (action_state, player, action_entity) in query.iter_mut() {
+    for (action_state, action_entity) in query.iter_mut() {
         if action_entity == entity {
             if action_state.just_pressed(PlayerAction::Throw) {
-                println!("Throwing ball");
                 let mut ball = ball_query.single_mut();
                 ball.velocity = player_direction.direction * BALL_SPEED;
                 commands.entity(entity).remove::<BallHandler>();

@@ -1,6 +1,5 @@
 mod ball;
 mod enemy;
-mod events;
 mod gamepad;
 mod player;
 mod resources;
@@ -10,7 +9,6 @@ mod ui;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use events::*;
 use resources::*;
 
 use crate::ball::BallPlugin;
@@ -51,8 +49,8 @@ fn main() {
     App::new()
         .add_state::<GameState>()
         .add_state::<AppState>()
-        .insert_resource(Lives { lives: 5 })
-        .insert_resource(Score { score: 0 })
+        .insert_resource(Player1Lives { lives: 5 })
+        .insert_resource(Player2Lives { lives: 5 })
         // .add_event::<CollisionEvent>()
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())

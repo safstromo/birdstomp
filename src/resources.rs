@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
 #[derive(Resource)]
-pub struct Score {
-    pub score: usize,
+pub struct Player2Lives {
+    pub lives: usize,
 }
 
 #[derive(Resource)]
-pub struct Lives {
+pub struct Player1Lives {
     pub lives: usize,
 }
 

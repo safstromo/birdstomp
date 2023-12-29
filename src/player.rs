@@ -137,7 +137,6 @@ fn move_player(
     mut query: Query<
         (
             &ActionState<PlayerAction>,
-            &NewPlayer,
             &mut Transform,
             &mut Velocity,
             &mut PlayerDirection,
@@ -146,30 +145,22 @@ fn move_player(
     >,
     time_step: Res<Time<Fixed>>,
 ) {
-    for (action_state, player, mut player_transform, mut velocity, mut direction) in
-        query.iter_mut()
-    {
+    for (action_state, mut player_transform, mut velocity, mut direction) in query.iter_mut() {
         let mut horizontal = 0.0;
         let mut vertical = 0.0;
         if action_state.pressed(PlayerAction::Up) {
-            println!("I'm up! player {:?}", player);
             vertical += 1.0;
         }
         if action_state.pressed(PlayerAction::Down) {
-            println!("I'm down! player {:?}", player);
             vertical -= 1.0;
         }
         if action_state.pressed(PlayerAction::Left) {
-            println!("I'm left! player {:?}", player);
             horizontal -= 1.0;
         }
         if action_state.pressed(PlayerAction::Right) {
-            println!("I'm right! player {:?}", player);
             horizontal += 1.0;
         }
-        if action_state.just_pressed(PlayerAction::Throw) {
-            println!("I'm throw! player {:?}", player);
-        }
+
         let mut new_player_position_horizontal =
             player_transform.translation.x + horizontal * PLAYER_SPEED * time_step.delta_seconds();
 
@@ -209,24 +200,22 @@ fn move_player(
 fn collision_with_enemy(
     mut commands: Commands,
     enemy_query: Query<Entity, With<Enemy>>,
-    player_query: Query<Entity, With<NewPlayer>>,
+    player_query: Query<(Entity, &NewPlayer), With<NewPlayer>>,
     rapier_context: Res<RapierContext>,
-    mut score: ResMut<crate::Score>,
-    mut lives: ResMut<crate::Lives>,
+    mut p2_lives: ResMut<crate::Player2Lives>,
+    mut p1_lives: ResMut<crate::Player1Lives>,
 ) {
     let enemy = enemy_query.single();
 
-    for player in player_query.iter() {
+    for (player, new_player) in player_query.iter() {
         if let Some(contact_pair) = rapier_context.contact_pair(player, enemy) {
             if contact_pair.has_any_active_contacts() {
-                println!(
-                    "Contact  player {} with enemy {}:",
-                    player.index(),
-                    enemy.index()
-                );
                 commands.insert_resource(NextState(Some(GameState::Paused)));
-                lives.lives -= 1;
-                score.score += 1;
+
+                match new_player {
+                    NewPlayer::One => p1_lives.lives -= 1,
+                    NewPlayer::Two => p2_lives.lives -= 1,
+                }
             }
         }
     }
