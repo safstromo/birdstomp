@@ -1,17 +1,7 @@
 use crate::player::{NewPlayer, PlayerBundle};
-/// Simple resource to store the ID of the connected gamepad.
-/// We need to know which gamepad to use for player input.
-use bevy::{
-    input::gamepad::{
-        GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadButtonInput,
-        GamepadConnectionEvent,
-    },
-    prelude::*,
-};
-use leafwing_input_manager::{axislike::DualAxisData, prelude::*, user_input::InputKind};
-///
-///
-///
+use bevy::prelude::*;
+use leafwing_input_manager::prelude::*;
+
 pub struct GamepadPlugin;
 
 impl Plugin for GamepadPlugin {
@@ -28,9 +18,9 @@ pub enum PlayerAction {
     Right,
     Throw,
     Dash,
+    Move,
 }
 
-// TODO - add Stick support
 impl PlayerBundle {
     pub fn input_map(player: NewPlayer) -> InputMap<PlayerAction> {
         let mut input_map = match player {
@@ -67,6 +57,8 @@ impl PlayerBundle {
             (GamepadButtonType::DPadDown, PlayerAction::Down),
             (GamepadButtonType::South, PlayerAction::Throw),
         ]);
+
+        input_map.insert(DualAxis::left_stick(), PlayerAction::Move);
 
         input_map
     }
