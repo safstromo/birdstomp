@@ -15,7 +15,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player).add_systems(
             Update,
-            (move_player, move_player_with_gamepad, collision_with_enemy)
+            (move_player)
                 .run_if(in_state(AppState::InGame))
                 .run_if(in_state(GameState::Running)),
         );
@@ -90,7 +90,6 @@ fn spawn_player(
         first: 10,
         last: 13,
     };
-    let animation_indices2 = AnimationIndices { first: 0, last: 4 };
 
     commands
         .spawn(PlayerBundle {
@@ -131,58 +130,6 @@ fn spawn_player(
         .insert(KinematicCharacterController::default())
         .insert(Collider::ball(10.0))
         .insert(ActiveEvents::COLLISION_EVENTS);
-
-    commands
-        .spawn((
-            SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle.clone(),
-                sprite: TextureAtlasSprite::new(animation_indices.first),
-                transform: Transform::from_xyz(50.0, -250., 2.0),
-                ..default()
-            },
-            animation_indices,
-            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-            Player {
-                velocity: Vec2::new(0.0, 0.0),
-            }, // Collider,
-            PlayerDirection {
-                direction: Vec2::new(0.0, 0.0),
-            },
-        ))
-        .insert(RigidBody::KinematicPositionBased)
-        .insert(KinematicCharacterController::default())
-        .insert(Collider::ball(10.0))
-        .insert(ActiveEvents::COLLISION_EVENTS);
-
-    commands
-        .spawn((
-            SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle,
-                sprite: TextureAtlasSprite::new(animation_indices2.first),
-                transform: Transform::from_xyz(-50.0, -250., 2.0),
-                ..default()
-            },
-            animation_indices2,
-            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-            Player2 {
-                velocity: Vec2::new(0.0, 0.0),
-            }, // Collider,
-            PlayerDirection {
-                direction: Vec2::new(0.0, 0.0),
-            },
-        ))
-        .insert(RigidBody::KinematicPositionBased)
-        .insert(KinematicCharacterController::default())
-        .insert(Collider::ball(10.0))
-        .insert(ActiveEvents::COLLISION_EVENTS);
-
-    //TODO the child collider gets different index than the parent
-    // .with_children(|children| {
-    //     children
-    //         .spawn(Collider::ball(10.0))
-    //         .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)))
-    //         .insert(ActiveEvents::COLLISION_EVENTS);
-    // });
 }
 
 fn move_player(

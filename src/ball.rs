@@ -1,7 +1,10 @@
+use crate::{
+    gamepad::PlayerAction,
+    player::{NewPlayer, Player, PlayerDirection},
+};
 use bevy::{input::gamepad::GamepadButtonChangedEvent, prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
-
-use crate::player::{Player, PlayerDirection};
+use leafwing_input_manager::prelude::*;
 
 pub struct BallPlugin;
 
@@ -12,7 +15,6 @@ impl Plugin for BallPlugin {
     }
 }
 const BALL_SPEED: f32 = 500.0;
-const MAX_VELOCITY: f32 = 1000.0;
 
 #[derive(Component)]
 pub struct Ball {
@@ -117,8 +119,7 @@ fn throw_ball(
     mut commands: Commands,
     ballhandler: Query<(Entity, &mut PlayerDirection, With<BallHandler>)>,
     mut ball_query: Query<&mut Ball>,
-    keyboard_input: Res<Input<KeyCode>>,
-    gamepad: Res<Gamepads>,
+    mut query: Query<(&ActionState<PlayerAction>, &NewPlayer, Entity), With<NewPlayer>>,
 ) {
     if ballhandler.is_empty() {
         return;
@@ -127,21 +128,14 @@ fn throw_ball(
     // println!("gamepad1: {:?}", gamepad1);
 
     let (entity, player_direction, _) = ballhandler.single();
-    let mut ball = ball_query.single_mut();
-    if keyboard_input.pressed(KeyCode::T) {
-        ball.velocity = player_direction.direction * BALL_SPEED;
-        commands.entity(entity).remove::<BallHandler>();
+    for (action_state, player, action_entity) in query.iter_mut() {
+        if action_entity == entity {
+            if action_state.just_pressed(PlayerAction::Throw) {
+                println!("Throwing ball");
+                let mut ball = ball_query.single_mut();
+                ball.velocity = player_direction.direction * BALL_SPEED;
+                commands.entity(entity).remove::<BallHandler>();
+            }
+        }
     }
-
-    // TODO - fix gamepad input
-    // for event in gamepad.get_reader().read(&gamepad) {
-    //     match event.button_type {
-    //         GamepadButtonType::South => {
-    //             println!("Throwing ball");
-    //             ball.velocity = player_direction.direction * BALL_SPEED;
-    //             commands.entity(entity).remove::<BallHandler>();
-    //         }
-    //         _ => (),
-    //     }
-    // }
 }

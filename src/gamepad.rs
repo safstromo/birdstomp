@@ -30,6 +30,7 @@ pub enum PlayerAction {
     Dash,
 }
 
+// TODO - add Stick support
 impl PlayerBundle {
     pub fn input_map(player: NewPlayer) -> InputMap<PlayerAction> {
         let mut input_map = match player {
