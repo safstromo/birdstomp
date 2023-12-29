@@ -19,7 +19,9 @@ pub enum PlayerAction {
     Throw,
     Dash,
     Move,
+    Start,
 }
+
 //TODO: Set gamepads dynamically to players
 impl PlayerBundle {
     pub fn input_map(player: NewPlayer) -> InputMap<PlayerAction> {
@@ -59,6 +61,7 @@ impl PlayerBundle {
             (GamepadButtonType::DPadDown, PlayerAction::Down),
             (GamepadButtonType::South, PlayerAction::Throw),
             (GamepadButtonType::West, PlayerAction::Dash),
+            (GamepadButtonType::Start, PlayerAction::Start),
         ]);
 
         input_map.insert(DualAxis::left_stick(), PlayerAction::Move);

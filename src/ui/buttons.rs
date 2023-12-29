@@ -1,8 +1,10 @@
+use crate::gamepad::PlayerAction;
 use crate::resources::{CountdownTimer, Lives, Score};
 use crate::ui::styles::*;
 use crate::AppState;
 use bevy::app::AppExit;
 use bevy::prelude::*;
+use leafwing_input_manager::prelude::ActionState;
 
 #[derive(Component)]
 pub struct PlayButton;
@@ -35,6 +37,27 @@ pub fn interact_with_play_button(
             Interaction::None => {
                 *background_color = NORMAL_BUTTON_COLOR.into();
             }
+        }
+    }
+}
+
+pub fn start(
+    mut life: ResMut<Lives>,
+    mut countdown: ResMut<CountdownTimer>,
+    mut score: ResMut<Score>,
+    mut button_query: Query<(&mut BackgroundColor, With<PlayButton>)>,
+    start_action: Query<&ActionState<PlayerAction>>,
+    mut app_state_next_state: ResMut<NextState<AppState>>,
+) {
+    let (mut background_color, _) = button_query.single_mut();
+
+    for start in start_action.iter() {
+        if start.pressed(PlayerAction::Start) {
+            *background_color = PRESSED_BUTTON_COLOR.into();
+            life.lives = 5;
+            score.score = 0;
+            countdown.duration = 4;
+            app_state_next_state.set(AppState::InGame);
         }
     }
 }
