@@ -186,42 +186,50 @@ fn spawn_player(
 }
 
 fn move_player(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&mut Transform, With<Player>>,
+    mut query: Query<(&ActionState<PlayerAction>, &NewPlayer, &mut Transform), With<NewPlayer>>,
     time_step: Res<Time<Fixed>>,
 ) {
-    let mut player_transform = query.single_mut();
-    let mut horizontal = 0.0;
-    let mut vertical = 0.0;
+    // Each action has a button-like state of its own that you can check
+    for (action_state, player, mut player_transform) in query.iter_mut() {
+        let mut horizontal = 0.0;
+        let mut vertical = 0.0;
+        if action_state.pressed(PlayerAction::Up) {
+            println!("I'm up! player {:?}", player);
+            vertical += 1.0;
+        }
+        if action_state.pressed(PlayerAction::Down) {
+            println!("I'm down! player {:?}", player);
+            vertical -= 1.0;
+        }
+        if action_state.pressed(PlayerAction::Left) {
+            println!("I'm left! player {:?}", player);
+            horizontal -= 1.0;
+        }
+        if action_state.pressed(PlayerAction::Right) {
+            println!("I'm right! player {:?}", player);
+            horizontal += 1.0;
+        }
+        if action_state.just_pressed(PlayerAction::Throw) {
+            println!("I'm throw! player {:?}", player);
+        }
+        let new_player_position_horizontal =
+            player_transform.translation.x + horizontal * PLAYER_SPEED * time_step.delta_seconds();
 
-    if keyboard_input.pressed(KeyCode::Left) {
-        horizontal -= 1.0;
+        let new_player_position_vertical =
+            player_transform.translation.y + vertical * PLAYER_SPEED * time_step.delta_seconds();
+        // Update the player position,
+        // making sure it doesn't cause the player to leave the arena
+        let left_bound = LEFT_WALL + WALL_THICKNESS / 2.0 + PLAYER_SIZE.x / 2.0 + PLAYER_PADDING;
+        let right_bound = RIGHT_WALL - WALL_THICKNESS / 2.0 - PLAYER_SIZE.x / 2.0 - PLAYER_PADDING;
+        let top_bound = TOP_WALL - WALL_THICKNESS / 2.0 - PLAYER_SIZE.y / 2.0 - PLAYER_PADDING;
+        let bottom_bound =
+            BOTTOM_WALL + WALL_THICKNESS / 2.0 + PLAYER_SIZE.y / 2.0 + PLAYER_PADDING;
+
+        player_transform.translation.x =
+            new_player_position_horizontal.clamp(left_bound, right_bound);
+        player_transform.translation.y =
+            new_player_position_vertical.clamp(bottom_bound, top_bound);
     }
-
-    if keyboard_input.pressed(KeyCode::Right) {
-        horizontal += 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::Up) {
-        vertical += 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::Down) {
-        vertical -= 1.0;
-    }
-
-    let new_player_position_horizontal =
-        player_transform.translation.x + horizontal * PLAYER_SPEED * time_step.delta_seconds();
-
-    let new_player_position_vertical =
-        player_transform.translation.y + vertical * PLAYER_SPEED * time_step.delta_seconds();
-    // Update the player position,
-    // making sure it doesn't cause the player to leave the arena
-    let left_bound = LEFT_WALL + WALL_THICKNESS / 2.0 + PLAYER_SIZE.x / 2.0 + PLAYER_PADDING;
-    let right_bound = RIGHT_WALL - WALL_THICKNESS / 2.0 - PLAYER_SIZE.x / 2.0 - PLAYER_PADDING;
-    let top_bound = TOP_WALL - WALL_THICKNESS / 2.0 - PLAYER_SIZE.y / 2.0 - PLAYER_PADDING;
-    let bottom_bound = BOTTOM_WALL + WALL_THICKNESS / 2.0 + PLAYER_SIZE.y / 2.0 + PLAYER_PADDING;
-
-    player_transform.translation.x = new_player_position_horizontal.clamp(left_bound, right_bound);
-    player_transform.translation.y = new_player_position_vertical.clamp(bottom_bound, top_bound);
 }
 
 fn move_player_with_gamepad(
