@@ -1,8 +1,10 @@
 use crate::enemy::Enemy;
+use crate::gamepad::PlayerAction;
 use crate::sprites::{AnimationIndices, AnimationTimer};
 use crate::{AppState, GameState, BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 use bevy::{input::gamepad::GamepadAxisChangedEvent, prelude::*};
 use bevy_rapier2d::prelude::*;
+use leafwing_input_manager::prelude::*;
 const PLAYER_SPEED: f32 = 500.0;
 const PLAYER_PADDING: f32 = 10.0;
 const PLAYER_SIZE: Vec2 = Vec2::new(5.0, 8.0);
@@ -20,18 +22,53 @@ impl Plugin for PlayerPlugin {
     }
 }
 
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    marker: NewPlayer,
+    direction: PlayerDirection,
+    velocity: Velocity,
+    sprite: SpriteSheetBundle,
+    animation_indices: AnimationIndices,
+    animation_timer: AnimationTimer,
+    input_manager: InputManagerBundle<PlayerAction>,
+}
+
+impl Default for PlayerBundle {
+    fn default() -> Self {
+        Self {
+            marker: NewPlayer::One,
+            direction: PlayerDirection {
+                direction: Vec2::new(0.0, 0.0),
+            },
+            velocity: Velocity(Vec2::new(0.0, 0.0)),
+            input_manager: InputManagerBundle::default(),
+            sprite: SpriteSheetBundle::default(),
+            animation_indices: AnimationIndices {
+                first: 10,
+                last: 13,
+            },
+            animation_timer: AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        }
+    }
+}
+
+#[derive(Component, Debug)]
+pub enum NewPlayer {
+    One,
+    Two,
+}
+
+#[derive(Component)]
+pub struct Velocity(pub Vec2);
+
 #[derive(Component)]
 pub struct Player {
-    pub health: f32,
     pub velocity: Vec2,
-    pub direction: Vec2,
 }
 
 #[derive(Component)]
 pub struct Player2 {
-    pub health: f32,
     pub velocity: Vec2,
-    pub direction: Vec2,
 }
 
 #[derive(Component)]
@@ -56,6 +93,46 @@ fn spawn_player(
     let animation_indices2 = AnimationIndices { first: 0, last: 4 };
 
     commands
+        .spawn(PlayerBundle {
+            marker: NewPlayer::One,
+            input_manager: InputManagerBundle {
+                input_map: PlayerBundle::input_map(NewPlayer::One),
+                ..Default::default()
+            },
+            sprite: SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(animation_indices.first),
+                transform: Transform::from_xyz(50.0, -250., 2.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(KinematicCharacterController::default())
+        .insert(Collider::ball(10.0))
+        .insert(ActiveEvents::COLLISION_EVENTS);
+
+    commands
+        .spawn(PlayerBundle {
+            marker: NewPlayer::Two,
+            input_manager: InputManagerBundle {
+                input_map: PlayerBundle::input_map(NewPlayer::Two),
+                ..Default::default()
+            },
+            sprite: SpriteSheetBundle {
+                texture_atlas: texture_atlas_handle.clone(),
+                sprite: TextureAtlasSprite::new(animation_indices.first),
+                transform: Transform::from_xyz(50.0, -250., 2.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(KinematicCharacterController::default())
+        .insert(Collider::ball(10.0))
+        .insert(ActiveEvents::COLLISION_EVENTS);
+
+    commands
         .spawn((
             SpriteSheetBundle {
                 texture_atlas: texture_atlas_handle.clone(),
@@ -66,9 +143,7 @@ fn spawn_player(
             animation_indices,
             AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
             Player {
-                health: 100.0,
                 velocity: Vec2::new(0.0, 0.0),
-                direction: Vec2::new(0.0, 0.0),
             }, // Collider,
             PlayerDirection {
                 direction: Vec2::new(0.0, 0.0),
@@ -78,14 +153,6 @@ fn spawn_player(
         .insert(KinematicCharacterController::default())
         .insert(Collider::ball(10.0))
         .insert(ActiveEvents::COLLISION_EVENTS);
-
-    //Todo the child collider gets different index than the parent
-    // .with_children(|children| {
-    //     children
-    //         .spawn(Collider::ball(10.0))
-    //         .insert(TransformBundle::from(Transform::from_xyz(0.0, -8.0, 0.0)))
-    //         .insert(ActiveEvents::COLLISION_EVENTS);
-    // });
 
     commands
         .spawn((
@@ -98,9 +165,7 @@ fn spawn_player(
             animation_indices2,
             AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
             Player2 {
-                health: 100.0,
                 velocity: Vec2::new(0.0, 0.0),
-                direction: Vec2::new(0.0, 0.0),
             }, // Collider,
             PlayerDirection {
                 direction: Vec2::new(0.0, 0.0),
@@ -179,22 +244,18 @@ fn move_player_with_gamepad(
         match event.axis_type {
             GamepadAxisType::LeftStickX => {
                 player1.velocity.x = event.value;
-                player1.direction.x = event.value;
                 player1_direction.direction.x = event.value;
             }
             GamepadAxisType::LeftStickY => {
                 player1.velocity.y = event.value;
-                player1.direction.y = event.value;
                 player1_direction.direction.y = event.value;
             }
             GamepadAxisType::RightStickX => {
                 player2.velocity.x = event.value;
-                player2.direction.x = event.value;
                 player2_direction.direction.x = event.value;
             }
             GamepadAxisType::RightStickY => {
                 player2.velocity.y = event.value;
-                player2.direction.y = event.value;
                 player2_direction.direction.y = event.value;
             }
             _ => {}

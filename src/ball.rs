@@ -123,8 +123,8 @@ fn throw_ball(
     if ballhandler.is_empty() {
         return;
     }
-    let gamepad1 = gamepad.iter().next().unwrap();
-    println!("gamepad1: {:?}", gamepad1);
+    // let gamepad1 = gamepad.iter().next().unwrap();
+    // println!("gamepad1: {:?}", gamepad1);
 
     let (entity, player_direction, _) = ballhandler.single();
     let mut ball = ball_query.single_mut();
