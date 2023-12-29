@@ -13,6 +13,8 @@ use crate::ui::menu::*;
 use crate::ui::start_countdown::countdown;
 use crate::AppState;
 use bevy::prelude::*;
+use bevy_ecs_tilemap::prelude::*;
+mod helpers;
 
 #[derive(Component)]
 struct GameBackground;
@@ -22,6 +24,8 @@ pub struct UiPlugin;
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<CountdownTimer>()
+            .add_plugins(TilemapPlugin)
+            .add_plugins(helpers::tiled::TiledMapPlugin)
             .add_systems(Startup, spawn_game_background)
             .add_systems(OnEnter(AppState::Menu), spawn_menu)
             .add_systems(OnExit(AppState::Menu), despawn_menu)
@@ -49,12 +53,12 @@ impl Plugin for UiPlugin {
 }
 
 fn spawn_game_background(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let background_image = asset_server.load("road.png");
+    let map_handle: Handle<helpers::tiled::TiledMap> = asset_server.load("map.tmx");
+
     commands.spawn((
-        SpriteBundle {
-            texture: background_image,
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
+        helpers::tiled::TiledMapBundle {
+            tiled_map: map_handle,
+            ..Default::default()
         },
         GameBackground,
     ));

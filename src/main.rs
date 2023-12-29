@@ -21,11 +21,11 @@ use crate::ui::UiPlugin;
 const WALL_THICKNESS: f32 = 10.0;
 
 // x coordinates
-const LEFT_WALL: f32 = -450.;
-const RIGHT_WALL: f32 = 450.;
+const LEFT_WALL: f32 = -640.;
+const RIGHT_WALL: f32 = 640.;
 // y coordinates
-const BOTTOM_WALL: f32 = -300.;
-const TOP_WALL: f32 = 300.;
+const BOTTOM_WALL: f32 = -460.;
+const TOP_WALL: f32 = 512.;
 
 const FLOOR_THICKNESS: f32 = 5.0;
 const COLOR_FLOOR: Color = Color::rgb(0.45, 0.55, 0.66);
@@ -64,7 +64,7 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Stomp".into(),
-                        resolution: (900., 600.).into(),
+                        resolution: (1280., 1024.).into(),
                         ..default()
                     }),
                     ..default()
@@ -110,7 +110,7 @@ fn spawn_map_borders(mut commands: Commands) {
             },
             transform: Transform {
                 translation: Vec3::new(0.0, BOTTOM_WALL + (FLOOR_THICKNESS / 2.0), 0.0),
-                scale: Vec3::new(900.0, FLOOR_THICKNESS, 1.0),
+                scale: Vec3::new(1280.0, FLOOR_THICKNESS, 1.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -126,7 +126,7 @@ fn spawn_map_borders(mut commands: Commands) {
             },
             transform: Transform {
                 translation: Vec3::new(0.0, TOP_WALL + (FLOOR_THICKNESS / 2.0), 0.0),
-                scale: Vec3::new(900.0, FLOOR_THICKNESS, 1.0),
+                scale: Vec3::new(1280.0, FLOOR_THICKNESS, 1.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -142,7 +142,7 @@ fn spawn_map_borders(mut commands: Commands) {
             },
             transform: Transform {
                 translation: Vec3::new(LEFT_WALL + (FLOOR_THICKNESS / 2.0), 0.0, 0.0),
-                scale: Vec3::new(FLOOR_THICKNESS, 600.0, 1.0),
+                scale: Vec3::new(FLOOR_THICKNESS, 1024.0, 1.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -158,7 +158,7 @@ fn spawn_map_borders(mut commands: Commands) {
             },
             transform: Transform {
                 translation: Vec3::new(RIGHT_WALL + (FLOOR_THICKNESS / 2.0), 0.0, 0.0),
-                scale: Vec3::new(FLOOR_THICKNESS, 600.0, 1.0),
+                scale: Vec3::new(FLOOR_THICKNESS, 1024.0, 1.0),
                 ..Default::default()
             },
             ..Default::default()
