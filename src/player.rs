@@ -1,5 +1,6 @@
 use crate::enemy::Enemy;
 use crate::gamepad::PlayerAction;
+use crate::resources::CountdownTimer;
 use crate::sprites::{AnimationIndices, AnimationTimer};
 use crate::{AppState, GameState, BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 use bevy::prelude::*;
@@ -204,6 +205,7 @@ fn collision_with_enemy(
     rapier_context: Res<RapierContext>,
     mut p2_lives: ResMut<crate::Player2Lives>,
     mut p1_lives: ResMut<crate::Player1Lives>,
+    mut countdown: ResMut<CountdownTimer>,
 ) {
     let enemy = enemy_query.single();
 
@@ -216,6 +218,7 @@ fn collision_with_enemy(
                     NewPlayer::One => p1_lives.lives -= 1,
                     NewPlayer::Two => p2_lives.lives -= 1,
                 }
+                countdown.duration = 4;
             }
         }
     }
