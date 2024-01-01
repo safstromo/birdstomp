@@ -1,4 +1,3 @@
-use crate::asset_loader::SceneAssets;
 use crate::enemy::Enemy;
 use crate::gamepad::PlayerAction;
 use crate::resources::CountdownTimer;
@@ -50,6 +49,7 @@ impl Default for PlayerBundle {
             velocity: Velocity(Vec2::new(0.0, 0.0)),
             input_manager: InputManagerBundle::default(),
             sprite: SpriteSheetBundle::default(),
+            //Idle animation
             animation_indices: AnimationIndices {
                 first: 10,
                 last: 13,
@@ -76,12 +76,12 @@ pub struct PlayerDirection {
 
 pub fn spawn_player(
     commands: &mut Commands,
-    scene_assets: &Res<SceneAssets>,
+    asset_server: &Res<AssetServer>,
     texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
     input_map: InputMap<PlayerAction>,
     gamepad: Gamepad,
 ) -> Entity {
-    let texture_handle = scene_assets.player.clone();
+    let texture_handle = asset_server.load("duckyatlas.png");
     let texture_atlas =
         TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 5, 3, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
@@ -103,7 +103,7 @@ pub fn spawn_player(
                 ..Default::default()
             },
             sprite: SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle.clone(),
+                texture_atlas: texture_atlas_handle,
                 sprite: TextureAtlasSprite::new(animation_indices.first),
                 transform: Transform::from_xyz(50.0, -250., 2.0),
                 ..default()
@@ -124,12 +124,15 @@ fn move_player(
             &mut Transform,
             &mut Velocity,
             &mut PlayerDirection,
+            &mut TextureAtlasSprite,
         ),
         With<Player>,
     >,
     time_step: Res<Time<Fixed>>,
 ) {
-    for (action_state, mut player_transform, mut velocity, mut direction) in query.iter_mut() {
+    for (action_state, mut player_transform, mut velocity, mut direction, mut sprite) in
+        query.iter_mut()
+    {
         let mut horizontal = 0.0;
         let mut vertical = 0.0;
         if action_state.pressed(PlayerAction::Up) {
@@ -140,9 +143,11 @@ fn move_player(
         }
         if action_state.pressed(PlayerAction::Left) {
             horizontal -= 1.0;
+            sprite.flip_x = true;
         }
         if action_state.pressed(PlayerAction::Right) {
             horizontal += 1.0;
+            sprite.flip_x = false;
         }
 
         let mut new_player_position_horizontal =
@@ -164,6 +169,22 @@ fn move_player(
                 + velocity.0.x * PLAYER_SPEED * time_step.delta_seconds();
             new_player_position_vertical = player_transform.translation.y
                 + velocity.0.y * PLAYER_SPEED * time_step.delta_seconds();
+
+            // if moved left or right flip sprite
+            if velocity.0.x != 0.0 {
+                sprite.flip_x = velocity.0.x < 0.0;
+            }
+
+            // idle animation or run animation
+            if velocity.0.x != 0.0 || velocity.0.y != 0.0 {
+                if sprite.index < 4 || sprite.index > 7 {
+                    sprite.index = 4;
+                }
+            } else {
+                if sprite.index < 10 || sprite.index > 13 {
+                    sprite.index = 10;
+                }
+            }
         }
 
         // Update the player position,

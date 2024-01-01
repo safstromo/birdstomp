@@ -34,6 +34,7 @@ fn join(
     gamepads: Res<Gamepads>,
     button_inputs: Res<Input<GamepadButton>>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
     scene_assets: Res<SceneAssets>,
 ) {
     for gamepad in gamepads.iter() {
@@ -64,7 +65,7 @@ fn join(
 
                 let player = spawn_player(
                     &mut commands,
-                    &scene_assets,
+                    &asset_server,
                     &mut texture_atlases,
                     input_map,
                     gamepad,
