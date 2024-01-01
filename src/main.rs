@@ -1,3 +1,4 @@
+mod asset_loader;
 mod ball;
 mod enemy;
 mod gamepad;
@@ -6,6 +7,7 @@ mod resources;
 mod sprites;
 mod ui;
 
+use asset_loader::AssetLoaderPlugin;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -71,6 +73,7 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(AssetLoaderPlugin)
         .add_plugins(GamepadPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(PlayerPlugin)

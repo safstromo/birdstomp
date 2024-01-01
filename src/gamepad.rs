@@ -1,4 +1,5 @@
 use crate::{
+    asset_loader::SceneAssets,
     player::{spawn_player, Player},
     resources::JoinedPlayers,
 };
@@ -32,8 +33,8 @@ fn join(
     mut joined_players: ResMut<JoinedPlayers>,
     gamepads: Res<Gamepads>,
     button_inputs: Res<Input<GamepadButton>>,
-    asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    scene_assets: Res<SceneAssets>,
 ) {
     for gamepad in gamepads.iter() {
         // Join the game when both bumpers (L+R) on the controller are pressed
@@ -63,7 +64,7 @@ fn join(
 
                 let player = spawn_player(
                     &mut commands,
-                    &asset_server,
+                    &scene_assets,
                     &mut texture_atlases,
                     input_map,
                     gamepad,

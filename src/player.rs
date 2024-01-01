@@ -1,3 +1,4 @@
+use crate::asset_loader::SceneAssets;
 use crate::enemy::Enemy;
 use crate::gamepad::PlayerAction;
 use crate::resources::CountdownTimer;
@@ -15,14 +16,12 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app
-            // .add_systems(Startup, spawn_player)
-            .add_systems(
-                Update,
-                (move_player, collision_with_enemy)
-                    .run_if(in_state(AppState::InGame))
-                    .run_if(in_state(GameState::Running)),
-            );
+        app.add_systems(
+            Update,
+            (move_player, collision_with_enemy)
+                .run_if(in_state(AppState::InGame))
+                .run_if(in_state(GameState::Running)),
+        );
     }
 }
 
@@ -60,12 +59,6 @@ impl Default for PlayerBundle {
     }
 }
 
-// #[derive(Component, Debug)]
-// pub enum PlayerNumber {
-//     One,
-//     Two,
-// }
-
 #[derive(Component, Debug)]
 pub struct Player {
     pub player_id: usize,
@@ -83,12 +76,12 @@ pub struct PlayerDirection {
 
 pub fn spawn_player(
     commands: &mut Commands,
-    asset_server: &Res<AssetServer>,
+    scene_assets: &Res<SceneAssets>,
     texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
     input_map: InputMap<PlayerAction>,
     gamepad: Gamepad,
 ) -> Entity {
-    let texture_handle = asset_server.load("duckyatlas.png");
+    let texture_handle = scene_assets.player.clone();
     let texture_atlas =
         TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 5, 3, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
