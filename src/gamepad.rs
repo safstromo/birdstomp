@@ -1,4 +1,7 @@
-use crate::player::{NewPlayer, PlayerBundle};
+use crate::{
+    player::{spawn_player, Player},
+    resources::JoinedPlayers,
+};
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
@@ -6,7 +9,8 @@ pub struct GamepadPlugin;
 
 impl Plugin for GamepadPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(InputManagerPlugin::<PlayerAction>::default());
+        app.add_plugins(InputManagerPlugin::<PlayerAction>::default())
+            .add_systems(Update, (join, disconnect));
     }
 }
 
@@ -20,52 +24,72 @@ pub enum PlayerAction {
     Dash,
     Move,
     Start,
+    Disconnect,
 }
 
-//TODO: Set gamepads dynamically to players
-impl PlayerBundle {
-    pub fn input_map(player: NewPlayer) -> InputMap<PlayerAction> {
-        let mut input_map = match player {
-            NewPlayer::One => InputMap::new([
-                (KeyCode::A, PlayerAction::Left),
-                (KeyCode::D, PlayerAction::Right),
-                (KeyCode::W, PlayerAction::Up),
-                (KeyCode::S, PlayerAction::Down),
-                (KeyCode::ShiftLeft, PlayerAction::Throw),
-                (KeyCode::ControlLeft, PlayerAction::Dash),
-            ])
-            // This is a quick and hacky solution:
-            // you should coordinate with the `Gamepads` resource to determine the correct gamepad for each player
-            // and gracefully handle disconnects
-            // Note that this step is not required:
-            // if it is skipped all input maps will read from all connected gamepads
-            .set_gamepad(Gamepad { id: 0 })
-            .build(),
-            NewPlayer::Two => InputMap::new([
-                (KeyCode::Left, PlayerAction::Left),
-                (KeyCode::Right, PlayerAction::Right),
-                (KeyCode::Up, PlayerAction::Up),
-                (KeyCode::Down, PlayerAction::Down),
-                (KeyCode::ShiftRight, PlayerAction::Throw),
-                (KeyCode::ControlRight, PlayerAction::Dash),
-            ])
-            .set_gamepad(Gamepad { id: 1 })
-            .build(),
-        };
+fn join(
+    mut commands: Commands,
+    mut joined_players: ResMut<JoinedPlayers>,
+    gamepads: Res<Gamepads>,
+    button_inputs: Res<Input<GamepadButton>>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
+    for gamepad in gamepads.iter() {
+        // Join the game when both bumpers (L+R) on the controller are pressed
+        // We drop down the Bevy's input to get the input from each gamepad
+        if button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::LeftTrigger))
+            && button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::RightTrigger))
+        {
+            // Make sure a player can not join twice
+            if !joined_players.0.contains_key(&gamepad) {
+                println!("Player {} has joined the game!", gamepad.id);
 
-        // Each player will use the same gamepad controls, but on separate gamepads.
-        input_map.insert_multiple([
-            (GamepadButtonType::DPadLeft, PlayerAction::Left),
-            (GamepadButtonType::DPadRight, PlayerAction::Right),
-            (GamepadButtonType::DPadUp, PlayerAction::Up),
-            (GamepadButtonType::DPadDown, PlayerAction::Down),
-            (GamepadButtonType::South, PlayerAction::Throw),
-            (GamepadButtonType::West, PlayerAction::Dash),
-            (GamepadButtonType::Start, PlayerAction::Start),
-        ]);
+                let input_map = InputMap::default()
+                    .insert_multiple([
+                        (GamepadButtonType::DPadLeft, PlayerAction::Left),
+                        (GamepadButtonType::DPadRight, PlayerAction::Right),
+                        (GamepadButtonType::DPadUp, PlayerAction::Up),
+                        (GamepadButtonType::DPadDown, PlayerAction::Down),
+                        (GamepadButtonType::South, PlayerAction::Throw),
+                        (GamepadButtonType::West, PlayerAction::Dash),
+                        (GamepadButtonType::Start, PlayerAction::Start),
+                        (GamepadButtonType::Select, PlayerAction::Disconnect),
+                    ])
+                    .insert(DualAxis::left_stick(), PlayerAction::Move)
+                    // Make sure to set the gamepad or all gamepads will be used!
+                    .set_gamepad(gamepad)
+                    .build();
 
-        input_map.insert(DualAxis::left_stick(), PlayerAction::Move);
+                let player = spawn_player(
+                    &mut commands,
+                    &asset_server,
+                    &mut texture_atlases,
+                    input_map,
+                    gamepad,
+                );
+                // Insert the created player and its gamepad to the hashmap of joined players
+                // Since uniqueness was already checked above, we can insert here unchecked
+                joined_players.0.insert_unique_unchecked(gamepad, player);
+            }
+        }
+    }
+}
 
-        input_map
+fn disconnect(
+    mut commands: Commands,
+    action_query: Query<(&ActionState<PlayerAction>, &Player)>,
+    mut joined_players: ResMut<JoinedPlayers>,
+) {
+    for (action_state, player) in action_query.iter() {
+        if action_state.pressed(PlayerAction::Disconnect) {
+            let player_entity = *joined_players.0.get(&player.gamepad).unwrap();
+
+            // Despawn the disconnected player and remove them from the joined player list
+            commands.entity(player_entity).despawn();
+            joined_players.0.remove(&player.gamepad);
+
+            println!("Player {} has disconnected!", player.gamepad.id);
+        }
     }
 }

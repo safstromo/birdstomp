@@ -49,6 +49,7 @@ fn main() {
     App::new()
         .add_state::<GameState>()
         .add_state::<AppState>()
+        .init_resource::<JoinedPlayers>()
         .insert_resource(Player1Lives { lives: 5 })
         .insert_resource(Player2Lives { lives: 5 })
         // .add_event::<CollisionEvent>()

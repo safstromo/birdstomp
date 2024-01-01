@@ -15,18 +15,20 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player).add_systems(
-            Update,
-            (move_player, collision_with_enemy)
-                .run_if(in_state(AppState::InGame))
-                .run_if(in_state(GameState::Running)),
-        );
+        app
+            // .add_systems(Startup, spawn_player)
+            .add_systems(
+                Update,
+                (move_player, collision_with_enemy)
+                    .run_if(in_state(AppState::InGame))
+                    .run_if(in_state(GameState::Running)),
+            );
     }
 }
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
-    marker: NewPlayer,
+    player: Player,
     direction: PlayerDirection,
     velocity: Velocity,
     sprite: SpriteSheetBundle,
@@ -38,7 +40,11 @@ pub struct PlayerBundle {
 impl Default for PlayerBundle {
     fn default() -> Self {
         Self {
-            marker: NewPlayer::One,
+            player: Player {
+                player_id: 0,
+                lives: 3,
+                gamepad: Gamepad { id: 0 },
+            },
             direction: PlayerDirection {
                 direction: Vec2::new(0.0, 0.0),
             },
@@ -54,35 +60,34 @@ impl Default for PlayerBundle {
     }
 }
 
+// #[derive(Component, Debug)]
+// pub enum PlayerNumber {
+//     One,
+//     Two,
+// }
+
 #[derive(Component, Debug)]
-pub enum NewPlayer {
-    One,
-    Two,
+pub struct Player {
+    pub player_id: usize,
+    pub lives: u32,
+    pub gamepad: Gamepad,
 }
 
 #[derive(Component)]
 pub struct Velocity(pub Vec2);
 
 #[derive(Component)]
-pub struct Player {
-    pub velocity: Vec2,
-}
-
-#[derive(Component)]
-pub struct Player2 {
-    pub velocity: Vec2,
-}
-
-#[derive(Component)]
 pub struct PlayerDirection {
     pub direction: Vec2,
 }
 
-fn spawn_player(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-) {
+pub fn spawn_player(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
+    input_map: InputMap<PlayerAction>,
+    gamepad: Gamepad,
+) -> Entity {
     let texture_handle = asset_server.load("duckyatlas.png");
     let texture_atlas =
         TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 5, 3, None, None);
@@ -93,11 +98,15 @@ fn spawn_player(
         last: 13,
     };
 
-    commands
+    return commands
         .spawn(PlayerBundle {
-            marker: NewPlayer::One,
+            player: Player {
+                player_id: gamepad.id, //make this dynamic
+                lives: 3,
+                gamepad,
+            },
             input_manager: InputManagerBundle {
-                input_map: PlayerBundle::input_map(NewPlayer::One),
+                input_map,
                 ..Default::default()
             },
             sprite: SpriteSheetBundle {
@@ -111,27 +120,8 @@ fn spawn_player(
         .insert(RigidBody::KinematicPositionBased)
         .insert(KinematicCharacterController::default())
         .insert(Collider::ball(10.0))
-        .insert(ActiveEvents::COLLISION_EVENTS);
-
-    commands
-        .spawn(PlayerBundle {
-            marker: NewPlayer::Two,
-            input_manager: InputManagerBundle {
-                input_map: PlayerBundle::input_map(NewPlayer::Two),
-                ..Default::default()
-            },
-            sprite: SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle.clone(),
-                sprite: TextureAtlasSprite::new(animation_indices.first),
-                transform: Transform::from_xyz(-50.0, -250., 2.0),
-                ..default()
-            },
-            ..default()
-        })
-        .insert(RigidBody::KinematicPositionBased)
-        .insert(KinematicCharacterController::default())
-        .insert(Collider::ball(10.0))
-        .insert(ActiveEvents::COLLISION_EVENTS);
+        .insert(ActiveEvents::COLLISION_EVENTS)
+        .id();
 }
 
 fn move_player(
@@ -142,7 +132,7 @@ fn move_player(
             &mut Velocity,
             &mut PlayerDirection,
         ),
-        With<NewPlayer>,
+        With<Player>,
     >,
     time_step: Res<Time<Fixed>>,
 ) {
@@ -201,7 +191,7 @@ fn move_player(
 fn collision_with_enemy(
     mut commands: Commands,
     enemy_query: Query<Entity, With<Enemy>>,
-    player_query: Query<(Entity, &NewPlayer), With<NewPlayer>>,
+    mut player_query: Query<(Entity, &Player), With<Player>>,
     rapier_context: Res<RapierContext>,
     mut p2_lives: ResMut<crate::Player2Lives>,
     mut p1_lives: ResMut<crate::Player1Lives>,
@@ -209,14 +199,17 @@ fn collision_with_enemy(
 ) {
     let enemy = enemy_query.single();
 
-    for (player, new_player) in player_query.iter() {
-        if let Some(contact_pair) = rapier_context.contact_pair(player, enemy) {
+    for (entity, player) in player_query.iter_mut() {
+        if let Some(contact_pair) = rapier_context.contact_pair(entity, enemy) {
             if contact_pair.has_any_active_contacts() {
                 commands.insert_resource(NextState(Some(GameState::Paused)));
 
-                match new_player {
-                    NewPlayer::One => p1_lives.lives -= 1,
-                    NewPlayer::Two => p2_lives.lives -= 1,
+                if player.player_id == 0 {
+                    p1_lives.lives -= 1;
+                    println!("Player 1 has {} lives left", p1_lives.lives);
+                } else {
+                    p2_lives.lives -= 1;
+                    println!("Player 2 has {} lives left", p2_lives.lives);
                 }
                 countdown.duration = 4;
             }

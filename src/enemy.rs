@@ -107,6 +107,6 @@ fn move_enemy_toward_player(
 
 fn despawn_enemy(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {
     for enemy in enemy_query.iter() {
-        commands.entity(enemy).despawn();
+        commands.entity(enemy).despawn_recursive();
     }
 }

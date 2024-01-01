@@ -1,6 +1,6 @@
 use crate::{
     gamepad::PlayerAction,
-    player::{NewPlayer, PlayerDirection},
+    player::{Player, PlayerDirection},
 };
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
@@ -105,7 +105,7 @@ fn throw_ball(
     mut commands: Commands,
     ballhandler: Query<(Entity, &mut PlayerDirection, With<BallHandler>)>,
     mut ball_query: Query<&mut Ball>,
-    mut query: Query<(&ActionState<PlayerAction>, Entity), With<NewPlayer>>,
+    mut query: Query<(&ActionState<PlayerAction>, Entity), With<Player>>,
 ) {
     if ballhandler.is_empty() {
         return;

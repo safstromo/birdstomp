@@ -1,4 +1,8 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
+
+// This is used to check if a player already exists and which entity to disconnect
+#[derive(Resource, Default)]
+pub struct JoinedPlayers(pub HashMap<Gamepad, Entity>);
 
 #[derive(Resource)]
 pub struct Player2Lives {
