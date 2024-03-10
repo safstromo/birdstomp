@@ -4,7 +4,7 @@ use bevy::{
 };
 use leafwing_input_manager::prelude::*;
 
-use crate::{gamepad::PlayerAction, player::Player, AppState, GameState};
+use crate::{gamepad::PlayerAction, player::Player, GameState};
 
 pub struct DirectionIndicatorPlugin;
 
@@ -18,19 +18,27 @@ impl Plugin for DirectionIndicatorPlugin {
 }
 
 #[derive(Component)]
-pub struct DirectionIndicator;
+pub struct DirectionIndicator {
+    pub direction: Vec2,
+}
 
 pub fn move_indicator(
     player_query: Query<&ActionState<PlayerAction>, With<Player>>,
-    mut indicator: Query<&mut Transform, (With<DirectionIndicator>, Without<Player>)>,
+    mut indicator: Query<
+        (&mut Transform, &mut DirectionIndicator),
+        (With<DirectionIndicator>, Without<Player>),
+    >,
 ) {
     let player_action = player_query.single();
-    let mut indicator_transform = indicator.single_mut();
+    let (mut indicator_transform, mut indicator) = indicator.single_mut();
 
     if player_action.pressed(&PlayerAction::Aim) {
         let axis_pair = player_action.clamped_axis_pair(&PlayerAction::Aim).unwrap();
 
         let direction = Vec2::new(axis_pair.x(), axis_pair.y()).normalize();
+
+        // Set the indicator's direction
+        indicator.direction = direction;
 
         // Scale the normalized direction by the desired offset
         let offset_direction = direction * 30.0;
@@ -53,6 +61,8 @@ pub fn spawn_indicator(
             transform: Transform::from_xyz(0.0, 30.0, 0.0),
             ..Default::default()
         })
-        .insert(DirectionIndicator)
+        .insert(DirectionIndicator {
+            direction: Vec2::new(0.0, 0.0),
+        })
         .id()
 }

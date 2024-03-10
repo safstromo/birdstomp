@@ -56,7 +56,7 @@ fn join(
                         (PlayerAction::Right, GamepadButtonType::DPadRight),
                         (PlayerAction::Up, GamepadButtonType::DPadUp),
                         (PlayerAction::Down, GamepadButtonType::DPadDown),
-                        (PlayerAction::Throw, GamepadButtonType::South),
+                        (PlayerAction::Throw, GamepadButtonType::RightTrigger2),
                         (PlayerAction::Dash, GamepadButtonType::West),
                         (PlayerAction::Start, GamepadButtonType::Start),
                         (PlayerAction::Disconnect, GamepadButtonType::Select),

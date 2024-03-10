@@ -1,4 +1,5 @@
 use crate::{
+    direction_indicator::DirectionIndicator,
     gamepad::PlayerAction,
     player::{Player, PlayerDirection},
 };
@@ -103,22 +104,48 @@ fn move_ball(
 
 fn throw_ball(
     mut commands: Commands,
-    ballhandler: Query<(Entity, &mut PlayerDirection, Has<BallHandler>)>,
+    ballhandler: Query<(Entity, &ActionState<PlayerAction>), With<BallHandler>>,
     mut ball_query: Query<&mut Ball>,
-    mut query: Query<(&ActionState<PlayerAction>, Entity), With<Player>>,
+    indicator: Query<&DirectionIndicator>,
 ) {
     if ballhandler.is_empty() {
         return;
     }
 
-    let (entity, player_direction, _) = ballhandler.single();
-    for (action_state, action_entity) in query.iter_mut() {
-        if action_entity == entity {
-            if action_state.just_pressed(&PlayerAction::Throw) {
-                let mut ball = ball_query.single_mut();
-                ball.velocity = player_direction.direction * BALL_SPEED;
-                commands.entity(entity).remove::<BallHandler>();
-            }
-        }
+    let (entity, action) = ballhandler.single();
+    let indicator = indicator.get_single().unwrap();
+
+    if action.just_pressed(&PlayerAction::Throw) {
+        let mut ball = ball_query.single_mut();
+        ball.velocity = indicator.direction * BALL_SPEED;
+        commands.entity(entity).remove::<BallHandler>();
     }
 }
+
+// fn throw_ball(
+//     mut commands: Commands,
+//     ballhandler: Query<
+//         (Entity, &ActionState<PlayerAction>, &mut PlayerDirection),
+//         With<BallHandler>,
+//     >,
+//     mut ball_query: Query<&mut Ball>,
+//     mut query: Query<(&ActionState<PlayerAction>, Entity, &DirectionIndicator), With<Player>>,
+// ) {
+//     if ballhandler.is_empty() {
+//         return;
+//     }
+//
+//     let (entity, action, player_direction) = ballhandler.single();
+//
+//     for (action_state, action_entity, indicator) in query.iter_mut() {
+//         if action_entity == entity {
+//             println!("entity true");
+//             if action.just_pressed(&PlayerAction::Throw) {
+//                 println!("Throwing pressed");
+//                 let mut ball = ball_query.single_mut();
+//                 ball.velocity = indicator.direction * BALL_SPEED;
+//                 commands.entity(entity).remove::<BallHandler>();
+//             }
+//         }
+//     }
+// }
