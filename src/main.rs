@@ -15,7 +15,7 @@ use bevy_rapier2d::prelude::*;
 use resources::*;
 
 use crate::ball::BallPlugin;
-use crate::direction_arrow::DirectionArrow;
+use crate::direction_arrow::DirectionArrowPlugin;
 use crate::enemy::EnemyPlugin;
 use crate::gamepad::GamepadPlugin;
 use crate::player::PlayerPlugin;
@@ -82,7 +82,7 @@ fn main() {
         .add_plugins(SpritePlugin)
         .add_plugins(EnemyPlugin)
         .add_plugins(BallPlugin)
-        .add_plugins(DirectionArrow)
+        // .add_plugins(DirectionArrowPlugin)
         .add_systems(Startup, (spawn_camera, spawn_map_borders))
         .add_systems(Update, bevy::window::close_on_esc)
         .add_systems(Update, toggle_gamestate.run_if(in_state(AppState::InGame)))

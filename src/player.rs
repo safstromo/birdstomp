@@ -1,3 +1,4 @@
+use crate::direction_arrow::spawn_arrow;
 use crate::enemy::Enemy;
 use crate::gamepad::PlayerAction;
 use crate::resources::CountdownTimer;
@@ -81,8 +82,8 @@ pub fn spawn_player(
     texture_atlases_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
     input_map: InputMap<PlayerAction>,
     gamepad: Gamepad,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
 ) -> Entity {
     let texture = asset_server.load("duckyatlas.png");
     // let texture_atlas =
@@ -100,8 +101,8 @@ pub fn spawn_player(
         Vec2::new(-8.0, -8.0),
         Vec2::new(8.0, -8.0),
     )));
-
-    return commands
+    let arrow = spawn_arrow(commands, meshes, materials);
+    let player = commands
         .spawn(PlayerBundle {
             player: Player {
                 player_id: gamepad.id, //make this dynamic
@@ -125,19 +126,15 @@ pub fn spawn_player(
             },
             ..default()
         })
-        .with_children(|parent| {
-            parent.spawn(MaterialMesh2dBundle {
-                mesh: triangle,
-                material: materials.add(Color::TOMATO),
-                transform: Transform::from_xyz(0.0, 20.0, 0.0),
-                ..Default::default()
-            });
-        })
         .insert(RigidBody::KinematicPositionBased)
         .insert(KinematicCharacterController::default())
         .insert(Collider::ball(10.0))
         .insert(ActiveEvents::COLLISION_EVENTS)
         .id();
+
+    commands.entity(player).add_child(arrow);
+
+    return player;
 }
 
 fn move_player(
@@ -231,6 +228,13 @@ fn move_player(
             new_player_position_vertical.clamp(bottom_bound, top_bound);
     }
 }
+
+// fn move_arrow(
+//     mut parent: Query<(&ActionState<PlayerAction>, &mut Transform), With<Player>>,
+//
+//     time_step: Res<Time<Fixed>>,
+// ) {
+// }
 
 fn collision_with_enemy(
     mut commands: Commands,

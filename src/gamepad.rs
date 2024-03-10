@@ -24,6 +24,7 @@ pub enum PlayerAction {
     Throw,
     Dash,
     Move,
+    Aim,
     Start,
     Disconnect,
 }
@@ -61,6 +62,7 @@ fn join(
                         (PlayerAction::Disconnect, GamepadButtonType::Select),
                     ])
                     .insert(PlayerAction::Move, DualAxis::left_stick())
+                    .insert(PlayerAction::Aim, DualAxis::right_stick())
                     // Make sure to set the gamepad or all gamepads will be used!
                     .set_gamepad(gamepad)
                     .build();
