@@ -4,6 +4,7 @@ use crate::resources::CountdownTimer;
 use crate::sprites::{AnimationIndices, AnimationTimer};
 use crate::{AppState, GameState, BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 use bevy::prelude::*;
+use bevy::sprite::{MaterialMesh2dBundle, Mesh2dHandle};
 use bevy_rapier2d::prelude::*;
 use leafwing_input_manager::prelude::*;
 
@@ -80,6 +81,8 @@ pub fn spawn_player(
     texture_atlases_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
     input_map: InputMap<PlayerAction>,
     gamepad: Gamepad,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
 ) -> Entity {
     let texture = asset_server.load("duckyatlas.png");
     // let texture_atlas =
@@ -91,6 +94,12 @@ pub fn spawn_player(
         first: 10,
         last: 13,
     };
+
+    let triangle = Mesh2dHandle(meshes.add(Triangle2d::new(
+        Vec2::Y * 8.0,
+        Vec2::new(-8.0, -8.0),
+        Vec2::new(8.0, -8.0),
+    )));
 
     return commands
         .spawn(PlayerBundle {
@@ -115,6 +124,14 @@ pub fn spawn_player(
                 ..default()
             },
             ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(MaterialMesh2dBundle {
+                mesh: triangle,
+                material: materials.add(Color::TOMATO),
+                transform: Transform::from_xyz(0.0, 20.0, 0.0),
+                ..Default::default()
+            });
         })
         .insert(RigidBody::KinematicPositionBased)
         .insert(KinematicCharacterController::default())

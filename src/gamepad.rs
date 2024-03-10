@@ -36,6 +36,8 @@ fn join(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
     scene_assets: Res<SceneAssets>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for gamepad in gamepads.iter() {
         // Join the game when both bumpers (L+R) on the controller are pressed
@@ -69,6 +71,8 @@ fn join(
                     &mut texture_atlases,
                     input_map,
                     gamepad,
+                    &mut meshes,
+                    &mut materials,
                 );
                 // Insert the created player and its gamepad to the hashmap of joined players
                 // Since uniqueness was already checked above, we can insert here unchecked
