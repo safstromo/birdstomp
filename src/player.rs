@@ -1,4 +1,4 @@
-use crate::direction_arrow::spawn_arrow;
+use crate::direction_indicator::spawn_indicator;
 use crate::enemy::Enemy;
 use crate::gamepad::PlayerAction;
 use crate::resources::CountdownTimer;
@@ -101,7 +101,7 @@ pub fn spawn_player(
         Vec2::new(-8.0, -8.0),
         Vec2::new(8.0, -8.0),
     )));
-    let arrow = spawn_arrow(commands, meshes, materials);
+    let arrow = spawn_indicator(commands, meshes, materials);
     let player = commands
         .spawn(PlayerBundle {
             player: Player {
