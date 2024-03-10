@@ -34,10 +34,10 @@ impl Plugin for UiPlugin {
             .add_systems(Startup, spawn_game_background)
             .add_systems(OnEnter(AppState::Menu), spawn_start_menu)
             .add_systems(OnExit(AppState::Menu), despawn_start_menu)
-            .add_systems(
-                Update,
-                (add_player_boxes, despawn_player_boxes).run_if(in_state(AppState::Menu)),
-            )
+            // .add_systems(
+            //     Update,
+            //     (add_player_boxes, despawn_player_boxes).run_if(in_state(AppState::Menu)),
+            // )
             // .add_systems(OnEnter(AppState::InGame), spawn_hud)
             // .add_systems(OnExit(AppState::InGame), despawn_hud)
             // .add_systems(OnEnter(AppState::GameOver), spawn_gameover)
@@ -78,14 +78,14 @@ fn _despawn_game_background(
 
 fn toggle_appstate(
     mut commands: Commands,
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     game_state: Res<State<AppState>>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::M) && game_state.as_ref() == &AppState::InGame {
+    if keyboard_input.just_pressed(KeyCode::KeyM) && game_state.as_ref() == &AppState::InGame {
         println!("Appstate set to: Menu");
         commands.insert_resource(NextState(Some(AppState::Menu)));
     }
-    if keyboard_input.just_pressed(KeyCode::M) && game_state.as_ref() == &AppState::Menu {
+    if keyboard_input.just_pressed(KeyCode::KeyM) && game_state.as_ref() == &AppState::Menu {
         println!("Appstate set to: InGame");
         commands.insert_resource(NextState(Some(AppState::InGame)));
     }

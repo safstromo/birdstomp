@@ -1,5 +1,6 @@
 mod asset_loader;
 mod ball;
+mod direction_arrow;
 mod enemy;
 mod gamepad;
 mod player;
@@ -49,8 +50,8 @@ pub enum GameState {
 
 fn main() {
     App::new()
-        .add_state::<GameState>()
-        .add_state::<AppState>()
+        .init_state::<GameState>()
+        .init_state::<AppState>()
         .init_resource::<JoinedPlayers>()
         .insert_resource(Player1Lives { lives: 5 })
         .insert_resource(Player2Lives { lives: 5 })
@@ -80,6 +81,7 @@ fn main() {
         .add_plugins(SpritePlugin)
         .add_plugins(EnemyPlugin)
         .add_plugins(BallPlugin)
+        .add_plugins(direction_arrow::DirectionArrow)
         .add_systems(Startup, (spawn_camera, spawn_map_borders))
         .add_systems(Update, bevy::window::close_on_esc)
         .add_systems(Update, toggle_gamestate.run_if(in_state(AppState::InGame)))
@@ -92,7 +94,7 @@ fn spawn_camera(mut commands: Commands) {
 
 fn toggle_gamestate(
     mut commands: Commands,
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     game_state: Res<State<GameState>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) && game_state.as_ref() == &GameState::Running {

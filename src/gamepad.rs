@@ -32,8 +32,8 @@ fn join(
     mut commands: Commands,
     mut joined_players: ResMut<JoinedPlayers>,
     gamepads: Res<Gamepads>,
-    button_inputs: Res<Input<GamepadButton>>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    button_inputs: Res<ButtonInput<GamepadButton>>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
     scene_assets: Res<SceneAssets>,
 ) {
@@ -49,16 +49,16 @@ fn join(
 
                 let input_map = InputMap::default()
                     .insert_multiple([
-                        (GamepadButtonType::DPadLeft, PlayerAction::Left),
-                        (GamepadButtonType::DPadRight, PlayerAction::Right),
-                        (GamepadButtonType::DPadUp, PlayerAction::Up),
-                        (GamepadButtonType::DPadDown, PlayerAction::Down),
-                        (GamepadButtonType::South, PlayerAction::Throw),
-                        (GamepadButtonType::West, PlayerAction::Dash),
-                        (GamepadButtonType::Start, PlayerAction::Start),
-                        (GamepadButtonType::Select, PlayerAction::Disconnect),
+                        (PlayerAction::Left, GamepadButtonType::DPadLeft),
+                        (PlayerAction::Right, GamepadButtonType::DPadRight),
+                        (PlayerAction::Up, GamepadButtonType::DPadUp),
+                        (PlayerAction::Down, GamepadButtonType::DPadDown),
+                        (PlayerAction::Throw, GamepadButtonType::South),
+                        (PlayerAction::Dash, GamepadButtonType::West),
+                        (PlayerAction::Start, GamepadButtonType::Start),
+                        (PlayerAction::Disconnect, GamepadButtonType::Select),
                     ])
-                    .insert(DualAxis::left_stick(), PlayerAction::Move)
+                    .insert(PlayerAction::Move, DualAxis::left_stick())
                     // Make sure to set the gamepad or all gamepads will be used!
                     .set_gamepad(gamepad)
                     .build();
@@ -84,7 +84,7 @@ fn disconnect(
     mut joined_players: ResMut<JoinedPlayers>,
 ) {
     for (action_state, player) in action_query.iter() {
-        if action_state.pressed(PlayerAction::Disconnect) {
+        if action_state.pressed(&PlayerAction::Disconnect) {
             let player_entity = *joined_players.0.get(&player.gamepad).unwrap();
 
             // Despawn the disconnected player and remove them from the joined player list

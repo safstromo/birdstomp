@@ -36,21 +36,29 @@ pub struct Enemy {
 fn spawn_enemy(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut texture_atlases_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let mut rng = rand::thread_rng();
-    let texture_handle = asset_server.load("monsters/tooth-walker/toothwalker-sheet.png");
-    let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 6, 5, None, None);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let texture = asset_server.load("monsters/tooth-walker/toothwalker-sheet.png");
+    // let texture_atlas =
+    // TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 6, 5, None, None);
+    let layout = TextureAtlasLayout::from_grid(Vec2::new(64.0, 64.0), 6, 5, None, None);
+    let texture_atlas_layout = texture_atlases_layouts.add(layout);
     // Use only the subset of sprites in the sheet that make up the run animation
     let animation_indices = AnimationIndices { first: 0, last: 5 };
 
     commands
         .spawn((
             SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle,
-                sprite: TextureAtlasSprite::new(animation_indices.first),
+                // texture_atlas: texture_atlas_handle,
+                // texture: texture_handle,
+                // sprite: Sprite::new(animation_indices.first),
+                //
+                texture,
+                atlas: TextureAtlas {
+                    layout: texture_atlas_layout,
+                    index: animation_indices.first,
+                },
                 transform: Transform {
                     translation: Vec3::new(rng.gen_range(LEFT_WALL..RIGHT_WALL), TOP_WALL, 1.),
                     scale: Vec3::splat(2.0),

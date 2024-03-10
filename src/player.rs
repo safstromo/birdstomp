@@ -77,14 +77,15 @@ pub struct PlayerDirection {
 pub fn spawn_player(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
-    texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
+    texture_atlases_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
     input_map: InputMap<PlayerAction>,
     gamepad: Gamepad,
 ) -> Entity {
-    let texture_handle = asset_server.load("duckyatlas.png");
-    let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 5, 3, None, None);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let texture = asset_server.load("duckyatlas.png");
+    // let texture_atlas =
+    //     TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 5, 3, None, None);
+    let layout = TextureAtlasLayout::from_grid(Vec2::new(64.0, 64.0), 5, 3, None, None);
+    let texture_atlas_layout = texture_atlases_layouts.add(layout);
     // Use only the subset of sprites in the sheet that make up the run animation
     let animation_indices = AnimationIndices {
         first: 10,
@@ -103,8 +104,13 @@ pub fn spawn_player(
                 ..Default::default()
             },
             sprite: SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle,
-                sprite: TextureAtlasSprite::new(animation_indices.first),
+                // texture_atlas: texture_atlas_handle,
+                // sprite: Sprite::new(animation_indices.first),
+                texture,
+                atlas: TextureAtlas {
+                    layout: texture_atlas_layout,
+                    index: animation_indices.first,
+                },
                 transform: Transform::from_xyz(50.0, -250., 2.0),
                 ..default()
             },
@@ -124,28 +130,35 @@ fn move_player(
             &mut Transform,
             &mut Velocity,
             &mut PlayerDirection,
-            &mut TextureAtlasSprite,
+            &mut Sprite,
+            &mut TextureAtlas,
         ),
         With<Player>,
     >,
     time_step: Res<Time<Fixed>>,
 ) {
-    for (action_state, mut player_transform, mut velocity, mut direction, mut sprite) in
-        query.iter_mut()
+    for (
+        action_state,
+        mut player_transform,
+        mut velocity,
+        mut direction,
+        mut sprite,
+        mut texture_atlas,
+    ) in query.iter_mut()
     {
         let mut horizontal = 0.0;
         let mut vertical = 0.0;
-        if action_state.pressed(PlayerAction::Up) {
+        if action_state.pressed(&PlayerAction::Up) {
             vertical += 1.0;
         }
-        if action_state.pressed(PlayerAction::Down) {
+        if action_state.pressed(&PlayerAction::Down) {
             vertical -= 1.0;
         }
-        if action_state.pressed(PlayerAction::Left) {
+        if action_state.pressed(&PlayerAction::Left) {
             horizontal -= 1.0;
             sprite.flip_x = true;
         }
-        if action_state.pressed(PlayerAction::Right) {
+        if action_state.pressed(&PlayerAction::Right) {
             horizontal += 1.0;
             sprite.flip_x = false;
         }
@@ -156,9 +169,9 @@ fn move_player(
         let mut new_player_position_vertical =
             player_transform.translation.y + vertical * PLAYER_SPEED * time_step.delta_seconds();
 
-        if action_state.pressed(PlayerAction::Move) {
+        if action_state.pressed(&PlayerAction::Move) {
             // We're working with gamepads, so we want to defensively ensure that we're using the clamped values
-            let axis_pair = action_state.clamped_axis_pair(PlayerAction::Move).unwrap();
+            let axis_pair = action_state.clamped_axis_pair(&PlayerAction::Move).unwrap();
 
             velocity.0.x = axis_pair.x();
             velocity.0.y = axis_pair.y();
@@ -177,12 +190,12 @@ fn move_player(
 
             // idle animation or run animation
             if velocity.0.x != 0.0 || velocity.0.y != 0.0 {
-                if sprite.index < 4 || sprite.index > 7 {
-                    sprite.index = 4;
+                if texture_atlas.index < 4 || texture_atlas.index > 7 {
+                    texture_atlas.index = 4;
                 }
             } else {
-                if sprite.index < 10 || sprite.index > 13 {
-                    sprite.index = 10;
+                if texture_atlas.index < 10 || texture_atlas.index > 13 {
+                    texture_atlas.index = 10;
                 }
             }
         }

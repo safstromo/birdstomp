@@ -33,7 +33,7 @@ fn spawn_ball(
     commands
         .spawn((
             MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Circle::new(6.).into()).into(),
+                mesh: meshes.add(shape::Circle::new(6.)).into(),
                 material: materials.add(ColorMaterial::from(Color::BLACK)),
                 transform: Transform::from_xyz(0.0, 0.0, 2.0),
                 ..default()
@@ -85,10 +85,10 @@ fn snap_to_player(
 
 //TODO: Fix ball movement/velocity
 fn move_ball(
-    mut ball_query: Query<(&mut Ball, &mut Transform, With<Ball>)>,
+    mut ball_query: Query<(&mut Ball, &mut Transform, Has<Ball>)>,
     ballhandler: Query<&mut Transform, (With<BallHandler>, Without<Ball>)>,
 ) {
-    let (ball, mut ball_transform, ()) = ball_query.single_mut();
+    let (ball, mut ball_transform, _) = ball_query.single_mut();
 
     if ballhandler.is_empty() {
         ball_transform.translation =
@@ -103,7 +103,7 @@ fn move_ball(
 
 fn throw_ball(
     mut commands: Commands,
-    ballhandler: Query<(Entity, &mut PlayerDirection, With<BallHandler>)>,
+    ballhandler: Query<(Entity, &mut PlayerDirection, Has<BallHandler>)>,
     mut ball_query: Query<&mut Ball>,
     mut query: Query<(&ActionState<PlayerAction>, Entity), With<Player>>,
 ) {
@@ -114,7 +114,7 @@ fn throw_ball(
     let (entity, player_direction, _) = ballhandler.single();
     for (action_state, action_entity) in query.iter_mut() {
         if action_entity == entity {
-            if action_state.just_pressed(PlayerAction::Throw) {
+            if action_state.just_pressed(&PlayerAction::Throw) {
                 let mut ball = ball_query.single_mut();
                 ball.velocity = player_direction.direction * BALL_SPEED;
                 commands.entity(entity).remove::<BallHandler>();

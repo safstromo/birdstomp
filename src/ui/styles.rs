@@ -95,7 +95,7 @@ pub fn spawn_button_text_box(
     parent.spawn(TextBundle {
         text: Text {
             sections: vec![TextSection::new(text, get_button_text_style(asset_server))],
-            alignment: TextAlignment::Center,
+            justify: JustifyText::Center,
             ..default()
         },
         ..default()
@@ -106,7 +106,7 @@ pub fn spawn_title_box(asset_server: &Res<AssetServer>, parent: &mut ChildBuilde
     parent.spawn(TextBundle {
         text: Text {
             sections: vec![TextSection::new(text, get_title_text_style(asset_server))],
-            alignment: TextAlignment::Center,
+            justify: JustifyText::Center,
             ..default()
         },
         ..default()

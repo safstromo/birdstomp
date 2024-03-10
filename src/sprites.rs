@@ -16,19 +16,15 @@ impl Plugin for SpritePlugin {
 
 fn animate_sprite(
     time: Res<Time>,
-    mut query: Query<(
-        &AnimationIndices,
-        &mut AnimationTimer,
-        &mut TextureAtlasSprite,
-    )>,
+    mut query: Query<(&AnimationIndices, &mut AnimationTimer, &mut TextureAtlas)>,
 ) {
-    for (indices, mut timer, mut sprite) in &mut query {
+    for (indices, mut timer, mut texture_atlas) in &mut query {
         timer.tick(time.delta());
         if timer.just_finished() {
-            sprite.index = if sprite.index == indices.last {
+            texture_atlas.index = if texture_atlas.index == indices.last {
                 indices.first
             } else {
-                sprite.index + 1
+                texture_atlas.index + 1
             };
         }
     }

@@ -36,7 +36,7 @@ pub fn start(
     mut app_state_next_state: ResMut<NextState<AppState>>,
 ) {
     for start in start_action.iter() {
-        if start.pressed(PlayerAction::Start) {
+        if start.pressed(&PlayerAction::Start) {
             countdown.duration = 4;
             app_state_next_state.set(AppState::InGame);
         }
@@ -47,14 +47,19 @@ pub fn add_player_boxes(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     players: Query<&Player>,
+    mut start_menu_query: Query<Entity, With<StartMenu>>,
 ) {
-    if players.is_empty() {
+    if players.is_empty() || start_menu_query.is_empty() {
         return;
     }
 
+    let start_menu_entity = start_menu_query.single_mut();
+
+    // only spawn if there is no playerbox for that player
+
     for player in players.iter() {
         let playerid = player.player_id + 1;
-        commands
+        let player_box = commands
             .spawn((
                 NodeBundle {
                     style: BUTTON_STYLE,
@@ -68,15 +73,17 @@ pub fn add_player_boxes(
                 parent.spawn(TextBundle {
                     text: Text {
                         sections: vec![TextSection::new(
-                            format!("Player {}", playerid.to_string()),
+                            format!("P {}", playerid.to_string()),
                             get_button_text_style(&asset_server),
                         )],
-                        alignment: TextAlignment::Center,
+                        justify: JustifyText::Center,
                         ..default()
                     },
                     ..default()
                 });
-            });
+            })
+            .id();
+        commands.entity(start_menu_entity).add_child(player_box);
     }
 }
 
