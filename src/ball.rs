@@ -64,17 +64,12 @@ fn snap_to_player(
     for event in event_reader.read() {
         match event {
             CollisionEvent::Started(collider1, collider2, _event) => {
-                if ball == *collider1 {
+                if ball == *collider1 || ball == *collider2 {
                     for player in players.iter() {
-                        if player == *collider2 {
+                        if player == *collider2 || player == *collider1 {
                             commands.entity(player).insert(BallHandler);
-                        }
-                    }
-                }
-                if ball == *collider2 {
-                    for player in players.iter() {
-                        if player == *collider1 {
-                            commands.entity(player).insert(BallHandler);
+                            commands.entity(ball).remove::<RigidBody>();
+                            commands.entity(ball).remove::<Collider>();
                         }
                     }
                 }
@@ -119,6 +114,7 @@ fn throw_ball(
         let mut ball = ball_query.single_mut();
         ball.velocity = indicator.direction * BALL_SPEED;
         commands.entity(entity).remove::<BallHandler>();
+        // commands.entity(ball).insert(RigidBody::Dynamic);
     }
 }
 
