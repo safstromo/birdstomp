@@ -7,10 +7,10 @@ edition = "2021"
 
 [dependencies]
 bevy = {version = "0.13" ,features = ["dynamic_linking"]}
-# bevy_ecs_tilemap = {git = "https://github.com/StarArawn/bevy_ecs_tilemap"}
-bevy_ecs_tilemap = { git = "https://github.com/rparrett/bevy_ecs_tilemap", branch = "bevy13" }
+bevy_ecs_tilemap = {git = "https://github.com/StarArawn/bevy_ecs_tilemap"}
+# bevy_ecs_tilemap = { git = "https://github.com/rparrett/bevy_ecs_tilemap", branch = "bevy13" }
 bevy_rapier2d = "0.25.0"
 leafwing-input-manager = "0.13"
 rand = "0.8.5"
 thiserror = "1.0.52"
-tiled = "0.11.2"
+tiled = "0.12.0"

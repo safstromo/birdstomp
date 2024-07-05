@@ -12,7 +12,8 @@ pub struct BallPlugin;
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_ball)
-            .add_systems(Update, (snap_to_player, move_ball, throw_ball));
+            // .add_systems(Update, (snap_to_player, move_ball, throw_ball));
+            .add_systems(Update, (snap_to_player, throw_ball));
     }
 }
 const BALL_SPEED: f32 = 500.0;
@@ -31,7 +32,7 @@ fn spawn_ball(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    commands
+    let ball_entity = commands
         .spawn((
             MaterialMesh2dBundle {
                 mesh: meshes.add(shape::Circle::new(6.)).into(),
@@ -44,8 +45,12 @@ fn spawn_ball(
             },
         ))
         .insert(RigidBody::Dynamic)
-        .insert(Collider::ball(30.0))
-        .insert(ActiveEvents::COLLISION_EVENTS);
+        .insert(Ccd::enabled())
+        .insert(Collider::ball(16.0))
+        .insert(ActiveEvents::COLLISION_EVENTS)
+        .id();
+
+    info!("Spawned ball entity: {:?}", ball_entity);
 }
 
 fn snap_to_player(
@@ -55,93 +60,109 @@ fn snap_to_player(
     players: Query<Entity, With<KinematicCharacterController>>,
     ballhandler: Query<Entity, With<BallHandler>>,
 ) {
-    let ball = ball_query.single();
-
     if !ballhandler.is_empty() {
         return;
     }
 
+    if ball_query.is_empty() {
+        return;
+    }
+
+    let ball = ball_query.single();
+
     for event in event_reader.read() {
-        match event {
-            CollisionEvent::Started(collider1, collider2, _event) => {
-                if ball == *collider1 || ball == *collider2 {
-                    for player in players.iter() {
-                        if player == *collider2 || player == *collider1 {
-                            commands.entity(player).insert(BallHandler);
-                            commands.entity(ball).remove::<RigidBody>();
-                            commands.entity(ball).remove::<Collider>();
-                        }
+        if let CollisionEvent::Started(collider1, collider2, _event) = event {
+            info!(
+                "Collision detected between: {:?} and {:?}",
+                collider1, collider2
+            );
+            if ball == *collider1 || ball == *collider2 {
+                for player in players.iter() {
+                    if player == *collider2 || player == *collider1 {
+                        info!("Player entity involved in collision: {:?}", player);
+                        commands.entity(player).insert(BallHandler);
+                        info!("BallHandler component added to player");
+                        // commands.entity(ball).remove::<RigidBody>();
+                        commands.entity(ball).despawn();
+                        info!("ball removed")
                     }
                 }
             }
-            _ => {}
         }
     }
 }
 
-//TODO: Fix ball movement/velocity
-fn move_ball(
-    mut ball_query: Query<(&mut Ball, &mut Transform, Has<Ball>)>,
-    ballhandler: Query<&mut Transform, (With<BallHandler>, Without<Ball>)>,
-) {
-    let (ball, mut ball_transform, _) = ball_query.single_mut();
-
-    if ballhandler.is_empty() {
-        ball_transform.translation =
-            ball_transform.translation + Vec3::new(ball.velocity.x, ball.velocity.y, 0.0) * 0.01;
-        return;
-    }
-
-    let ballhandler = ballhandler.single();
-
-    ball_transform.translation = ballhandler.translation;
-}
-
-fn throw_ball(
-    mut commands: Commands,
-    ballhandler: Query<(Entity, &ActionState<PlayerAction>), With<BallHandler>>,
-    mut ball_query: Query<&mut Ball>,
-    indicator: Query<&DirectionIndicator>,
-) {
-    if ballhandler.is_empty() {
-        return;
-    }
-
-    let (entity, action) = ballhandler.single();
-    let indicator = indicator.get_single().unwrap();
-
-    if action.just_pressed(&PlayerAction::Throw) {
-        let mut ball = ball_query.single_mut();
-        ball.velocity = indicator.direction * BALL_SPEED;
-        commands.entity(entity).remove::<BallHandler>();
-        // commands.entity(ball).insert(RigidBody::Dynamic);
-    }
-}
-
-// fn throw_ball(
-//     mut commands: Commands,
-//     ballhandler: Query<
-//         (Entity, &ActionState<PlayerAction>, &mut PlayerDirection),
-//         With<BallHandler>,
-//     >,
-//     mut ball_query: Query<&mut Ball>,
-//     mut query: Query<(&ActionState<PlayerAction>, Entity, &DirectionIndicator), With<Player>>,
+// //TODO: Fix ball movement/velocity
+// fn move_ball(
+//     mut ball_query: Query<(&mut Ball, &mut Transform, Has<Ball>)>,
+//     ballhandler: Query<&mut Transform, (With<BallHandler>, Without<Ball>)>,
+//     indicator: Query<&DirectionIndicator>,
 // ) {
+//     let (_, mut ball_transform, _) = ball_query.single_mut();
+//
 //     if ballhandler.is_empty() {
 //         return;
 //     }
+//     let indicator = indicator.single();
+//     let ballhandler = ballhandler.single();
 //
-//     let (entity, action, player_direction) = ballhandler.single();
+//     //TODO: this is not centered
+//     let offset_direction = indicator.direction * 30.0;
 //
-//     for (action_state, action_entity, indicator) in query.iter_mut() {
-//         if action_entity == entity {
-//             println!("entity true");
-//             if action.just_pressed(&PlayerAction::Throw) {
-//                 println!("Throwing pressed");
-//                 let mut ball = ball_query.single_mut();
-//                 ball.velocity = indicator.direction * BALL_SPEED;
-//                 commands.entity(entity).remove::<BallHandler>();
-//             }
-//         }
-//     }
+//     let new_x = offset_direction.x + ballhandler.translation.x;
+//     let new_y = offset_direction.y + ballhandler.translation.y;
+//     ball_transform.translation = Vec3::new(new_x, new_y, 0.0);
 // }
+
+//TODO: Refactor spawning ball
+
+fn throw_ball(
+    mut commands: Commands,
+    ballhandler: Query<(Entity, &ActionState<PlayerAction>, &Transform), With<BallHandler>>,
+    indicator: Query<&DirectionIndicator>,
+    mut event_reader: EventReader<CollisionEvent>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    if ballhandler.is_empty() {
+        return;
+    }
+
+    let (ballhandler_entity, action, ballhandler_transform) = ballhandler.single();
+    let indicator = indicator.get_single().unwrap();
+
+    if action.just_pressed(&PlayerAction::Throw) {
+        let impulse_strength = 500000.0; // Adjust for desired throwing power
+        let collider_mprops = ColliderMassProperties::Density(0.5); // Adjust density as needed
+
+        // Spawn ball in the middle of the screen and set move direction straight up
+        let screen_center = Vec3::new(0.0, 0.0, 2.0);
+        let move_direction = indicator.direction.normalize();
+
+        let ball = commands
+            .spawn((
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(shape::Circle::new(6.)).into(),
+                    material: materials.add(ColorMaterial::from(Color::BLACK)),
+                    transform: Transform::from_translation(ballhandler_transform.translation),
+                    ..default()
+                },
+                Ball {
+                    velocity: move_direction * BALL_SPEED,
+                },
+            ))
+            .insert(RigidBody::Dynamic)
+            .insert(Ccd::enabled())
+            .insert(Collider::ball(16.0))
+            .insert(collider_mprops)
+            .insert(ActiveEvents::COLLISION_EVENTS)
+            .insert(ExternalImpulse {
+                impulse: move_direction * impulse_strength,
+                torque_impulse: 0.0, // Optional: Set a torque impulse for spinning throw (default 0)
+            })
+            .id();
+
+        info!("Spawned ball entity: {:?}", ball);
+        commands.entity(ballhandler_entity).remove::<BallHandler>();
+    }
+}

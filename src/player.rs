@@ -127,6 +127,7 @@ pub fn spawn_player(
             ..default()
         })
         .insert(RigidBody::KinematicPositionBased)
+        .insert(Ccd::enabled())
         .insert(KinematicCharacterController::default())
         .insert(Collider::ball(10.0))
         .insert(ActiveEvents::COLLISION_EVENTS)

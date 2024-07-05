@@ -13,12 +13,12 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_enemy)
-            .add_systems(
-                FixedUpdate,
-                (move_enemy_toward_player)
-                    .run_if(in_state(AppState::InGame))
-                    .run_if(in_state(GameState::Running)),
-            )
+            // .add_systems(
+            //     FixedUpdate,
+            //     (move_enemy_toward_player)
+            //         .run_if(in_state(AppState::InGame))
+            //         .run_if(in_state(GameState::Running)),
+            // )
             .add_systems(OnExit(AppState::InGame), despawn_enemy);
     }
 }
@@ -74,6 +74,7 @@ fn spawn_enemy(
                 health: 100.0,
             },
         ))
+        .insert(Ccd::enabled())
         .insert(RigidBody::Dynamic)
         .insert(Collider::cuboid(6.0, 10.0));
 }
