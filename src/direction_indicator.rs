@@ -4,7 +4,7 @@ use bevy::{
 };
 use leafwing_input_manager::prelude::*;
 
-use crate::{gamepad::PlayerAction, player::Player, GameState};
+use crate::{ball::BallHandler, gamepad::PlayerAction, player::Player, GameState};
 
 pub struct DirectionIndicatorPlugin;
 
@@ -23,7 +23,7 @@ pub struct DirectionIndicator {
 }
 
 pub fn move_indicator(
-    player_query: Query<&ActionState<PlayerAction>, With<Player>>,
+    player_query: Query<(&ActionState<PlayerAction>, &BallHandler), With<Player>>,
     mut indicator: Query<
         (&mut Transform, &mut DirectionIndicator),
         (With<DirectionIndicator>, Without<Player>),
@@ -33,10 +33,9 @@ pub fn move_indicator(
         return;
     }
 
-    // let player_action = player_query.single();
     let (mut indicator_transform, mut indicator) = indicator.single_mut();
 
-    for player_action in player_query.into_iter() {
+    for (player_action, _) in player_query.into_iter() {
         if player_action.pressed(&PlayerAction::Aim) {
             let axis_pair = player_action.clamped_axis_pair(&PlayerAction::Aim).unwrap();
 

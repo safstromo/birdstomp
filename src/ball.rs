@@ -12,15 +12,12 @@ pub struct BallPlugin;
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_ball)
-            // .add_systems(Update, (snap_to_player, move_ball, throw_ball));
             .add_systems(Update, (snap_to_player, throw_ball, return_ball));
     }
 }
-const BALL_SPEED: f32 = 500.0;
 
 #[derive(Component, Debug)]
 pub struct Ball {
-    velocity: Vec2,
     despawn_timer: f32,
 }
 
@@ -41,10 +38,7 @@ fn spawn_ball(
                 transform: Transform::from_xyz(0.0, 0.0, 2.0),
                 ..default()
             },
-            Ball {
-                velocity: Vec2::new(0.0, 0.0),
-                despawn_timer: 4.0,
-            },
+            Ball { despawn_timer: 4.0 },
         ))
         .insert(RigidBody::Dynamic)
         .insert(Ccd::enabled())
@@ -111,12 +105,11 @@ fn snap_to_player(
     }
 }
 
-//TODO: Refactor spawning ball
 fn throw_ball(
     mut commands: Commands,
     ballhandler: Query<(Entity, &ActionState<PlayerAction>, &Transform), With<BallHandler>>,
     indicator: Query<&DirectionIndicator>,
-    mut event_reader: EventReader<CollisionEvent>,
+    // mut event_reader: EventReader<CollisionEvent>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     ball_query: Query<Entity, With<Ball>>,
@@ -133,8 +126,10 @@ fn throw_ball(
     let indicator = indicator.get_single().unwrap();
 
     if action.just_pressed(&PlayerAction::Throw) {
-        let impulse_strength = 500000.0; // Adjust for desired throwing power
-        let collider_mprops = ColliderMassProperties::Density(0.5); // Adjust density as needed
+        // Adjust for desired throwing power
+        let impulse_strength = 500000.0;
+        // Adjust density as needed
+        let collider_mprops = ColliderMassProperties::Density(0.5);
 
         let move_direction = indicator.direction.normalize();
 
@@ -146,10 +141,7 @@ fn throw_ball(
                     transform: Transform::from_translation(ballhandler_transform.translation),
                     ..default()
                 },
-                Ball {
-                    velocity: move_direction * BALL_SPEED,
-                    despawn_timer: 4.0,
-                },
+                Ball { despawn_timer: 4.0 },
             ))
             .insert(RigidBody::Dynamic)
             .insert(Ccd::enabled())
@@ -177,7 +169,7 @@ fn return_ball(
     }
 
     let (ball_enity, mut ball) = ball_query.get_single_mut().unwrap();
-    // info!("Ball velocity: {:?}", ball.despawn_timer);
+    // info!("Ball timer: {:?}", ball.despawn_timer);
 
     ball.despawn_timer -= time.delta_seconds();
 
