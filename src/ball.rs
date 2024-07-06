@@ -1,9 +1,9 @@
 use crate::{
-    direction_indicator::DirectionIndicator,
+    direction_indicator::{self, spawn_indicator, DirectionIndicator},
     gamepad::PlayerAction,
-    player::{Player, PlayerDirection},
 };
-use bevy::{ecs::schedule::common_conditions, prelude::*, sprite::MaterialMesh2dBundle};
+
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
 use leafwing_input_manager::prelude::*;
 
@@ -61,6 +61,9 @@ fn snap_to_player(
     ball_query: Query<Entity, With<Ball>>,
     players: Query<Entity, With<KinematicCharacterController>>,
     ballhandler: Query<Entity, With<BallHandler>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    direction_indicator: Query<Entity, With<DirectionIndicator>>,
 ) {
     if ball_query.is_empty() {
         return;
@@ -86,11 +89,21 @@ fn snap_to_player(
                         info!("BallHandler component added to player");
                         commands.entity(ball).despawn();
                         info!("ball removed");
+
                         if !ballhandler.is_empty() {
-                            commands
-                                .entity(ballhandler.get_single().unwrap())
-                                .remove::<BallHandler>();
+                            let old_ballhandler = ballhandler.get_single().unwrap();
+                            let direction_indicator = direction_indicator.get_single().unwrap();
+                            info!("Removing ballhandler component from old ballhandler");
+                            commands.entity(old_ballhandler).remove::<BallHandler>();
+
+                            info!("Despawning direction indicator");
+                            commands.entity(direction_indicator).despawn();
                         }
+
+                        info!("Adding direction indicator to new ballhandler");
+                        let direction_indicator =
+                            spawn_indicator(&mut commands, &mut meshes, &mut materials);
+                        commands.entity(player).add_child(direction_indicator);
                     }
                 }
             }
@@ -108,7 +121,7 @@ fn throw_ball(
     mut meshes: ResMut<Assets<Mesh>>,
     ball_query: Query<Entity, With<Ball>>,
 ) {
-    if ballhandler.is_empty() {
+    if ballhandler.is_empty() || indicator.is_empty() {
         return;
     }
 

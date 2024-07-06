@@ -29,22 +29,29 @@ pub fn move_indicator(
         (With<DirectionIndicator>, Without<Player>),
     >,
 ) {
-    let player_action = player_query.single();
+    if indicator.is_empty() {
+        return;
+    }
+
+    // let player_action = player_query.single();
     let (mut indicator_transform, mut indicator) = indicator.single_mut();
 
-    if player_action.pressed(&PlayerAction::Aim) {
-        let axis_pair = player_action.clamped_axis_pair(&PlayerAction::Aim).unwrap();
+    for player_action in player_query.into_iter() {
+        if player_action.pressed(&PlayerAction::Aim) {
+            let axis_pair = player_action.clamped_axis_pair(&PlayerAction::Aim).unwrap();
 
-        let direction = Vec2::new(axis_pair.x(), axis_pair.y()).normalize();
+            let direction = Vec2::new(axis_pair.x(), axis_pair.y()).normalize();
 
-        // Set the indicator's direction
-        indicator.direction = direction;
+            // Set the indicator's direction
+            indicator.direction = direction;
 
-        // Scale the normalized direction by the desired offset
-        let offset_direction = direction * 30.0;
+            // Scale the normalized direction by the desired offset
+            let offset_direction = direction * 30.0;
 
-        // Set the indicator's position with the adjusted direction and offset
-        indicator_transform.translation = Vec3::new(offset_direction.x, offset_direction.y, 0.0);
+            // Set the indicator's position with the adjusted direction and offset
+            indicator_transform.translation =
+                Vec3::new(offset_direction.x, offset_direction.y, 0.0);
+        }
     }
 }
 

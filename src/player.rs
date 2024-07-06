@@ -101,7 +101,8 @@ pub fn spawn_player(
         Vec2::new(-8.0, -8.0),
         Vec2::new(8.0, -8.0),
     )));
-    let arrow = spawn_indicator(commands, meshes, materials);
+    //Added to ballhandler
+    // let arrow = spawn_indicator(commands, meshes, materials);
     let player = commands
         .spawn(PlayerBundle {
             player: Player {
@@ -133,7 +134,8 @@ pub fn spawn_player(
         .insert(ActiveEvents::COLLISION_EVENTS)
         .id();
 
-    commands.entity(player).add_child(arrow);
+    //added to ballhandler
+    // commands.entity(player).add_child(arrow);
 
     return player;
 }
