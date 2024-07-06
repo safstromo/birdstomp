@@ -81,15 +81,9 @@ fn snap_to_player(
             if ball == *collider1 || ball == *collider2 {
                 for player in players.iter() {
                     if !ballhandler.is_empty() && player == ballhandler.get_single().unwrap() {
-                        break;
+                        continue;
                     }
                     if player == *collider2 || player == *collider1 {
-                        info!("Player entity involved in collision: {:?}", player);
-                        commands.entity(player).insert(BallHandler);
-                        info!("BallHandler component added to player");
-                        commands.entity(ball).despawn();
-                        info!("ball removed");
-
                         if !ballhandler.is_empty() {
                             let old_ballhandler = ballhandler.get_single().unwrap();
                             let direction_indicator = direction_indicator.get_single().unwrap();
@@ -100,6 +94,12 @@ fn snap_to_player(
                             commands.entity(direction_indicator).despawn();
                         }
 
+                        info!("Player entity involved in collision: {:?}", player);
+                        commands.entity(player).insert(BallHandler);
+                        info!("BallHandler component added to player");
+                        commands.entity(ball).despawn();
+
+                        info!("ball removed");
                         info!("Adding direction indicator to new ballhandler");
                         let direction_indicator =
                             spawn_indicator(&mut commands, &mut meshes, &mut materials);
@@ -177,11 +177,12 @@ fn return_ball(
     }
 
     let (ball_enity, mut ball) = ball_query.get_single_mut().unwrap();
-    info!("Ball velocity: {:?}", ball.despawn_timer);
+    // info!("Ball velocity: {:?}", ball.despawn_timer);
 
     ball.despawn_timer -= time.delta_seconds();
 
     if ball.despawn_timer <= 0.0 {
+        info!("Ball despawn timer at 0, returning ball");
         commands.entity(ball_enity).despawn();
     }
 }
