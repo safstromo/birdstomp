@@ -1,11 +1,10 @@
-use crate::direction_indicator::spawn_indicator;
 use crate::enemy::Enemy;
 use crate::gamepad::PlayerAction;
 use crate::resources::CountdownTimer;
 use crate::sprites::{AnimationIndices, AnimationTimer};
 use crate::{AppState, GameState, BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 use bevy::prelude::*;
-use bevy::sprite::{MaterialMesh2dBundle, Mesh2dHandle};
+use bevy::sprite::Mesh2dHandle;
 use bevy_rapier2d::prelude::*;
 use leafwing_input_manager::prelude::*;
 
@@ -44,6 +43,7 @@ impl Default for PlayerBundle {
                 player_id: 0,
                 lives: 3,
                 gamepad: Gamepad { id: 0 },
+                have_ball: false,
             },
             direction: PlayerDirection {
                 direction: Vec2::new(0.0, 0.0),
@@ -66,6 +66,7 @@ pub struct Player {
     pub player_id: usize,
     pub lives: u32,
     pub gamepad: Gamepad,
+    pub have_ball: bool,
 }
 
 #[derive(Component)]
@@ -109,6 +110,7 @@ pub fn spawn_player(
                 player_id: gamepad.id, //make this dynamic
                 lives: 3,
                 gamepad,
+                have_ball: false,
             },
             input_manager: InputManagerBundle {
                 input_map,

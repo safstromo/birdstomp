@@ -1,6 +1,7 @@
 use crate::{
     direction_indicator::{self, spawn_indicator, DirectionIndicator},
     gamepad::PlayerAction,
+    player::Player,
 };
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
@@ -107,7 +108,10 @@ fn snap_to_player(
 
 fn throw_ball(
     mut commands: Commands,
-    ballhandler: Query<(Entity, &ActionState<PlayerAction>, &Transform), With<BallHandler>>,
+    ballhandler: Query<
+        (Entity, &ActionState<PlayerAction>, &Transform, &Player),
+        With<BallHandler>,
+    >,
     indicator: Query<&DirectionIndicator>,
     // mut event_reader: EventReader<CollisionEvent>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -122,10 +126,11 @@ fn throw_ball(
         return;
     }
 
-    let (ballhandler_entity, action, ballhandler_transform) = ballhandler.single();
+    let (ballhandler_entity, action, ballhandler_transform, player) = ballhandler.single();
     let indicator = indicator.get_single().unwrap();
 
     if action.just_pressed(&PlayerAction::Throw) {
+        info!("player {:?} pressed throw", player);
         // Adjust for desired throwing power
         let impulse_strength = 500000.0;
         // Adjust density as needed
