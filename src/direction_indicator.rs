@@ -4,7 +4,7 @@ use bevy::{
 };
 use leafwing_input_manager::prelude::*;
 
-use crate::{ball::BallHandler, gamepad::PlayerAction, player::Player, GameState};
+use crate::{gamepad::PlayerAction, player::Player, GameState};
 
 pub struct DirectionIndicatorPlugin;
 
@@ -23,7 +23,7 @@ pub struct DirectionIndicator {
 }
 
 pub fn move_indicator(
-    player_query: Query<(&ActionState<PlayerAction>, &BallHandler), With<Player>>,
+    player_query: Query<(&ActionState<PlayerAction>, &Player), With<Player>>,
     mut indicator: Query<
         (&mut Transform, &mut DirectionIndicator),
         (With<DirectionIndicator>, Without<Player>),
@@ -35,8 +35,8 @@ pub fn move_indicator(
 
     let (mut indicator_transform, mut indicator) = indicator.single_mut();
 
-    for (player_action, _) in player_query.into_iter() {
-        if player_action.pressed(&PlayerAction::Aim) {
+    for (player_action, player) in player_query.into_iter() {
+        if player_action.pressed(&PlayerAction::Aim) && player.have_ball {
             let axis_pair = player_action.clamped_axis_pair(&PlayerAction::Aim).unwrap();
 
             let direction = Vec2::new(axis_pair.x(), axis_pair.y()).normalize();
@@ -63,7 +63,7 @@ pub fn spawn_indicator(
     commands
         .spawn(MaterialMesh2dBundle {
             mesh: circle,
-            material: materials.add(Color::TOMATO),
+            material: materials.add(Color::srgb(255.0, 99.0, 71.0)),
             transform: Transform::from_xyz(0.0, 30.0, 0.0),
             ..Default::default()
         })

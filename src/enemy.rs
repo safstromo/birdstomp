@@ -1,5 +1,4 @@
-use crate::ball::BallHandler;
-use crate::{AppState, GameState, LEFT_WALL, RIGHT_WALL, TOP_WALL};
+use crate::{player::Player, AppState, GameState, LEFT_WALL, RIGHT_WALL, TOP_WALL};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::Rng;
@@ -13,12 +12,12 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_enemy)
-            .add_systems(
-                FixedUpdate,
-                (move_enemy_toward_player)
-                    .run_if(in_state(AppState::InGame))
-                    .run_if(in_state(GameState::Running)),
-            )
+            // .add_systems(
+            //     FixedUpdate,
+            //     (move_enemy_toward_player)
+            //         .run_if(in_state(AppState::InGame))
+            //         .run_if(in_state(GameState::Running)),
+            // )
             .add_systems(OnExit(AppState::InGame), despawn_enemy);
     }
 }
@@ -42,7 +41,7 @@ fn spawn_enemy(
     let texture = asset_server.load("monsters/tooth-walker/toothwalker-sheet.png");
     // let texture_atlas =
     // TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 6, 5, None, None);
-    let layout = TextureAtlasLayout::from_grid(Vec2::new(64.0, 64.0), 6, 5, None, None);
+    let layout = TextureAtlasLayout::from_grid(UVec2::new(64, 64), 6, 5, None, None);
     let texture_atlas_layout = texture_atlases_layouts.add(layout);
     // Use only the subset of sprites in the sheet that make up the run animation
     let animation_indices = AnimationIndices { first: 0, last: 5 };
@@ -76,42 +75,43 @@ fn spawn_enemy(
         ))
         .insert(Ccd::enabled())
         .insert(RigidBody::Dynamic)
+        .insert(GravityScale(0.0))
         .insert(Collider::cuboid(6.0, 10.0));
 }
 
 fn move_enemy_toward_player(
     mut enemy_query: Query<(&mut Transform, &mut Enemy)>,
-    ballhandler_query: Query<&Transform, (With<BallHandler>, Without<Enemy>)>,
+    ballhandler_query: Query<(&Transform, &Player), With<Player>>,
     time: Res<Time>,
 ) {
-    if ballhandler_query.is_empty() {
-        return;
-    }
-
-    let ballhandler_transform = ballhandler_query.single();
+    // let ballhandler_transform = ballhandler_query.single();
 
     let (mut enemy_transform, mut enemy) = enemy_query.single_mut();
 
-    let direction = ballhandler_transform.translation - enemy_transform.translation;
-    let direction = direction.normalize();
+    for (player_transform, player) in ballhandler_query.iter() {
+        if player.have_ball {
+            let direction = player_transform.translation - enemy_transform.translation;
+            let direction = direction.normalize();
 
-    let distance = ballhandler_transform
-        .translation
-        .distance(enemy_transform.translation);
+            let distance = player_transform
+                .translation
+                .distance(enemy_transform.translation);
 
-    //TODO adjust speed speeds and radius
+            //TODO adjust speed speeds and radius
 
-    // Slow down when close to the player.
-    let slow_down_radius = 100.0;
-    if distance < slow_down_radius {
-        enemy.speed = enemy.current_speed * 0.5;
+            // Slow down when close to the player.
+            let slow_down_radius = 100.0;
+            if distance < slow_down_radius {
+                enemy.speed = enemy.current_speed * 0.5;
+            }
+            if distance > slow_down_radius {
+                enemy.speed = enemy.current_speed;
+            }
+
+            enemy_transform.translation += direction * enemy.speed * time.delta_seconds();
+            enemy.current_speed += 0.8;
+        }
     }
-    if distance > slow_down_radius {
-        enemy.speed = enemy.current_speed;
-    }
-
-    enemy_transform.translation += direction * enemy.speed * time.delta_seconds();
-    enemy.current_speed += 0.8;
 }
 
 fn despawn_enemy(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {

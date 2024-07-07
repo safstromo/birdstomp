@@ -83,10 +83,10 @@ fn toggle_appstate(
 ) {
     if keyboard_input.just_pressed(KeyCode::KeyM) && game_state.as_ref() == &AppState::InGame {
         println!("Appstate set to: Menu");
-        commands.insert_resource(NextState(Some(AppState::Menu)));
+        commands.insert_resource(NextState::Pending(AppState::Menu));
     }
     if keyboard_input.just_pressed(KeyCode::KeyM) && game_state.as_ref() == &AppState::Menu {
         println!("Appstate set to: InGame");
-        commands.insert_resource(NextState(Some(AppState::InGame)));
+        commands.insert_resource(NextState::Pending(AppState::InGame));
     }
 }

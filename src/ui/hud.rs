@@ -60,7 +60,7 @@ fn build_hud(commands: &mut Commands, asset_server: &Res<AssetServer>) -> Entity
                             TextSection::new("P1Lives: ", get_hud_text_style(asset_server)),
                             TextSection::from_style(TextStyle {
                                 font_size: 64.0,
-                                color: Color::RED,
+                                color: Color::srgb(255.0, 0.0, 0.0),
                                 ..default()
                             }),
                         ]),
@@ -71,7 +71,7 @@ fn build_hud(commands: &mut Commands, asset_server: &Res<AssetServer>) -> Entity
                             TextSection::new("P2Lives: ", get_hud_text_style(asset_server)),
                             TextSection::from_style(TextStyle {
                                 font_size: 64.0,
-                                color: Color::RED,
+                                color: Color::srgb(255.0, 0.0, 0.0),
                                 ..default()
                             }),
                         ]),
@@ -90,8 +90,8 @@ pub fn update_lives(
 ) {
     let mut text = query.single_mut(); //fails multiple entries
     if life.lives == 0 {
-        commands.insert_resource(NextState(Some(GameState::Paused)));
-        commands.insert_resource(NextState(Some(AppState::GameOver)));
+        commands.insert_resource(NextState::Pending(GameState::Paused));
+        commands.insert_resource(NextState::Pending(AppState::GameOver));
     }
     text.sections[1].value = life.lives.to_string();
 }

@@ -1,5 +1,5 @@
 use crate::{
-    direction_indicator::{self, spawn_indicator, DirectionIndicator},
+    direction_indicator::{spawn_indicator, DirectionIndicator},
     gamepad::PlayerAction,
     player::Player,
 };
@@ -13,7 +13,15 @@ pub struct BallPlugin;
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_ball)
-            .add_systems(Update, (snap_to_player, throw_ball, return_ball));
+            .add_systems(Update, (snap_to_player, test_bug, return_ball));
+    }
+}
+fn test_bug(action_query: Query<(&ActionState<PlayerAction>, &Player)>) {
+    // Iterate through each player to see if they jumped
+    for (action_state, player) in action_query.iter() {
+        if action_state.just_pressed(&PlayerAction::Throw) {
+            println!("Player {} dash!", player.gamepad.id);
+        }
     }
 }
 
@@ -22,8 +30,8 @@ pub struct Ball {
     despawn_timer: f32,
 }
 
-#[derive(Component)]
-pub struct BallHandler;
+// #[derive(Component)]
+// pub struct BallHandler;
 
 // TODO - add ball sprite
 fn spawn_ball(
@@ -34,7 +42,7 @@ fn spawn_ball(
     let ball_entity = commands
         .spawn((
             MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Circle::new(6.)).into(),
+                mesh: meshes.add(bevy::math::prelude::Circle::new(6.)).into(),
                 material: materials.add(ColorMaterial::from(Color::BLACK)),
                 transform: Transform::from_xyz(0.0, 0.0, 2.0),
                 ..default()
@@ -45,17 +53,18 @@ fn spawn_ball(
         .insert(Ccd::enabled())
         .insert(Collider::ball(16.0))
         .insert(ActiveEvents::COLLISION_EVENTS)
+        .insert(GravityScale(0.0))
         .id();
 
     info!("Spawned ball entity: {:?}", ball_entity);
 }
 
+//TODO: Not sure if this works correctly
 fn snap_to_player(
     mut commands: Commands,
     mut event_reader: EventReader<CollisionEvent>,
     ball_query: Query<Entity, With<Ball>>,
-    players: Query<Entity, With<KinematicCharacterController>>,
-    ballhandler: Query<Entity, With<BallHandler>>,
+    mut players: Query<(Entity, &mut Player), With<KinematicCharacterController>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     direction_indicator: Query<Entity, With<DirectionIndicator>>,
@@ -74,32 +83,35 @@ fn snap_to_player(
             );
 
             if ball == *collider1 || ball == *collider2 {
-                for player in players.iter() {
-                    if !ballhandler.is_empty() && player == ballhandler.get_single().unwrap() {
+                let mut old_ballhandler = None;
+                let mut new_ballhandler = false;
+                for (player_entity, mut player) in players.iter_mut() {
+                    if player.have_ball {
+                        old_ballhandler = Some(player);
                         continue;
                     }
-                    if player == *collider2 || player == *collider1 {
-                        if !ballhandler.is_empty() {
-                            let old_ballhandler = ballhandler.get_single().unwrap();
-                            let direction_indicator = direction_indicator.get_single().unwrap();
-                            info!("Removing ballhandler component from old ballhandler");
-                            commands.entity(old_ballhandler).remove::<BallHandler>();
 
-                            info!("Despawning direction indicator");
-                            commands.entity(direction_indicator).despawn();
-                        }
-
-                        info!("Player entity involved in collision: {:?}", player);
-                        commands.entity(player).insert(BallHandler);
-                        info!("BallHandler component added to player");
+                    if player_entity == *collider2 || player_entity == *collider1 {
+                        info!("Player entity involved in collision: {:?}", player_entity);
+                        player.have_ball = true;
+                        new_ballhandler = true;
+                        info!("BallHandler added to player");
                         commands.entity(ball).despawn();
+                        info!("Ball removed");
 
-                        info!("ball removed");
                         info!("Adding direction indicator to new ballhandler");
                         let direction_indicator =
                             spawn_indicator(&mut commands, &mut meshes, &mut materials);
-                        commands.entity(player).add_child(direction_indicator);
+                        commands
+                            .entity(player_entity)
+                            .add_child(direction_indicator);
                     }
+                }
+                if old_ballhandler.is_some() && new_ballhandler {
+                    old_ballhandler.unwrap().have_ball = false;
+                    let direction_indicator = direction_indicator.get_single().unwrap();
+                    info!("Despawning direction indicator");
+                    commands.entity(direction_indicator).despawn();
                 }
             }
         }
@@ -108,17 +120,18 @@ fn snap_to_player(
 
 fn throw_ball(
     mut commands: Commands,
-    ballhandler: Query<
-        (Entity, &ActionState<PlayerAction>, &Transform, &Player),
-        With<BallHandler>,
-    >,
-    indicator: Query<&DirectionIndicator>,
+    // ballhandler: Query<
+    //     (Entity, &ActionState<PlayerAction>, &Transform, &Player),
+    //     With<BallHandler>,
+    // >,
+    players: Query<(&ActionState<PlayerAction>, &Player)>,
+    indicator: Query<(&DirectionIndicator, &Transform)>,
     // mut event_reader: EventReader<CollisionEvent>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     ball_query: Query<Entity, With<Ball>>,
 ) {
-    if ballhandler.is_empty() || indicator.is_empty() {
+    if indicator.is_empty() {
         return;
     }
 
@@ -126,60 +139,71 @@ fn throw_ball(
         return;
     }
 
-    let (ballhandler_entity, action, ballhandler_transform, player) = ballhandler.single();
-    let indicator = indicator.get_single().unwrap();
+    // let (ballhandler_entity, action, ballhandler_transform, player) = ballhandler.single();
+    let (indicator, indicator_transform) = indicator.get_single().unwrap();
 
-    if action.just_pressed(&PlayerAction::Throw) {
-        info!("player {:?} pressed throw", player);
-        // Adjust for desired throwing power
-        let impulse_strength = 500000.0;
-        // Adjust density as needed
-        let collider_mprops = ColliderMassProperties::Density(0.5);
+    for (action, player) in players.iter() {
+        if action.just_pressed(&PlayerAction::Throw) {
+            info!("player {:?} pressed throw", player);
+            // // Adjust for desired throwing power
+            // let impulse_strength = 500000.0;
+            // // Adjust density as needed
+            // let collider_mprops = ColliderMassProperties::Density(0.5);
+            //
+            // let move_direction = indicator.direction.normalize();
+            //
+            // //TODO: fix this, translation??????
+            // let ball = commands
+            //     .spawn((
+            //         MaterialMesh2dBundle {
+            //             mesh: meshes.add(shape::Circle::new(6.)).into(),
+            //             material: materials.add(ColorMaterial::from(Color::BLACK)),
+            //             transform: Transform::from_translation(indicator_transform.translation),
+            //             ..default()
+            //         },
+            //         Ball { despawn_timer: 4.0 },
+            //     ))
+            //     .insert(RigidBody::Dynamic)
+            //     .insert(Ccd::enabled())
+            //     .insert(Collider::ball(16.0))
+            //     .insert(collider_mprops)
+            //     .insert(ActiveEvents::COLLISION_EVENTS)
+            //     .insert(ExternalImpulse {
+            //         impulse: move_direction * impulse_strength,
+            //         torque_impulse: 0.0, // Optional: Set a torque impulse for spinning throw (default 0)
+            //     })
+            //     .id();
+            //
+            // info!("Spawned ball entity: {:?}", ball);
+        }
 
-        let move_direction = indicator.direction.normalize();
-
-        let ball = commands
-            .spawn((
-                MaterialMesh2dBundle {
-                    mesh: meshes.add(shape::Circle::new(6.)).into(),
-                    material: materials.add(ColorMaterial::from(Color::BLACK)),
-                    transform: Transform::from_translation(ballhandler_transform.translation),
-                    ..default()
-                },
-                Ball { despawn_timer: 4.0 },
-            ))
-            .insert(RigidBody::Dynamic)
-            .insert(Ccd::enabled())
-            .insert(Collider::ball(16.0))
-            .insert(collider_mprops)
-            .insert(ActiveEvents::COLLISION_EVENTS)
-            .insert(ExternalImpulse {
-                impulse: move_direction * impulse_strength,
-                torque_impulse: 0.0, // Optional: Set a torque impulse for spinning throw (default 0)
-            })
-            .id();
-
-        info!("Spawned ball entity: {:?}", ball);
+        if action.just_pressed(&PlayerAction::Dash) {
+            info!("player {:?} pressed dash", player);
+        }
     }
 }
 
 fn return_ball(
     mut commands: Commands,
-    ballhandler: Query<(Entity, &ActionState<PlayerAction>, &Transform), With<BallHandler>>,
+    players: Query<(Entity, &Player, &Transform), With<Player>>,
     mut ball_query: Query<(Entity, &mut Ball), With<Ball>>,
     time: Res<Time>,
 ) {
-    if ball_query.is_empty() || ballhandler.is_empty() {
+    if ball_query.is_empty() {
         return;
     }
 
-    let (ball_enity, mut ball) = ball_query.get_single_mut().unwrap();
-    // info!("Ball timer: {:?}", ball.despawn_timer);
+    for (player_entity, player, player_transform) in players.iter() {
+        if player.have_ball {
+            let (ball_enity, mut ball) = ball_query.get_single_mut().unwrap();
+            // info!("Ball timer: {:?}", ball.despawn_timer);
 
-    ball.despawn_timer -= time.delta_seconds();
+            ball.despawn_timer -= time.delta_seconds();
 
-    if ball.despawn_timer <= 0.0 {
-        info!("Ball despawn timer at 0, returning ball");
-        commands.entity(ball_enity).despawn();
+            if ball.despawn_timer <= 0.0 {
+                info!("Ball despawn timer at 0, returning ball");
+                commands.entity(ball_enity).despawn();
+            }
+        }
     }
 }

@@ -1,12 +1,11 @@
 use bevy::prelude::*;
 
-use crate::GameState;
 use crate::resources::CountdownTimer;
 use crate::ui::styles::spawn_title_box;
+use crate::GameState;
 
 #[derive(Component, Debug)]
 pub struct Countdown;
-
 
 pub fn countdown(
     mut commands: Commands,
@@ -28,7 +27,7 @@ pub fn countdown(
         } else if timer.duration == 1 {
             despawn_countdown(&mut commands, &countdown_query);
             spawn_countdown(&mut commands, &asset_server, "GO..");
-            commands.insert_resource(NextState(Some(GameState::Running)));
+            commands.insert_resource(NextState::Pending(GameState::Running));
         } else if timer.duration == 0 {
             despawn_countdown(&mut commands, &countdown_query);
         }
@@ -38,26 +37,30 @@ pub fn countdown(
     }
 }
 
-fn spawn_countdown(commands: &mut Commands, asset_server: &Res<AssetServer>, countdown: &str) -> Entity {
+fn spawn_countdown(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    countdown: &str,
+) -> Entity {
     let countdown = commands
-        .spawn((NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        },
-                Countdown,
+            Countdown,
         ))
         .with_children(|parent| {
             spawn_title_box(asset_server, parent, countdown);
         })
-
         .id();
     countdown
 }
@@ -65,7 +68,8 @@ fn spawn_countdown(commands: &mut Commands, asset_server: &Res<AssetServer>, cou
 //can refactor to a single despawn!!
 pub fn despawn_countdown(
     commands: &mut Commands,
-    countdown_query: &Query<Entity, With<Countdown>>, ) {
+    countdown_query: &Query<Entity, With<Countdown>>,
+) {
     if let Ok(countdown_entity) = countdown_query.get_single() {
         commands.entity(countdown_entity).despawn_recursive();
     }

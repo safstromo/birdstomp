@@ -51,18 +51,12 @@ pub enum GameState {
 
 fn main() {
     App::new()
-        .init_state::<GameState>()
-        .init_state::<AppState>()
         .init_resource::<JoinedPlayers>()
         .insert_resource(Player1Lives { lives: 5 })
         .insert_resource(Player2Lives { lives: 5 })
         // .add_event::<CollisionEvent>()
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
-        .insert_resource(RapierConfiguration {
-            gravity: Vect::ZERO,
-            ..Default::default()
-        })
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
@@ -84,8 +78,9 @@ fn main() {
         .add_plugins(BallPlugin)
         .add_plugins(DirectionIndicatorPlugin)
         .add_systems(Startup, (spawn_camera, spawn_map_borders))
-        .add_systems(Update, bevy::window::close_on_esc)
         .add_systems(Update, toggle_gamestate.run_if(in_state(AppState::InGame)))
+        .init_state::<GameState>()
+        .init_state::<AppState>()
         .run();
 }
 
@@ -100,11 +95,11 @@ fn toggle_gamestate(
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) && game_state.as_ref() == &GameState::Running {
         println!("Gamestate set to: Paused");
-        commands.insert_resource(NextState(Some(GameState::Paused)));
+        commands.insert_resource(NextState::Pending(GameState::Paused));
     }
     if keyboard_input.just_pressed(KeyCode::Space) && game_state.as_ref() == &GameState::Paused {
         println!("Gamestate set to: Running");
-        commands.insert_resource(NextState(Some(GameState::Running)));
+        commands.insert_resource(NextState::Pending(GameState::Running));
     }
 }
 

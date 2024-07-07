@@ -1,5 +1,4 @@
 use crate::{
-    asset_loader::SceneAssets,
     player::{spawn_player, Player},
     resources::JoinedPlayers,
 };
@@ -36,7 +35,7 @@ fn join(
     button_inputs: Res<ButtonInput<GamepadButton>>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
-    scene_assets: Res<SceneAssets>,
+    // scene_assets: Res<SceneAssets>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
@@ -52,12 +51,8 @@ fn join(
 
                 let input_map = InputMap::default()
                     .insert_multiple([
-                        (PlayerAction::Left, GamepadButtonType::DPadLeft),
-                        (PlayerAction::Right, GamepadButtonType::DPadRight),
-                        (PlayerAction::Up, GamepadButtonType::DPadUp),
-                        (PlayerAction::Down, GamepadButtonType::DPadDown),
                         (PlayerAction::Throw, GamepadButtonType::RightTrigger2),
-                        (PlayerAction::Dash, GamepadButtonType::West),
+                        (PlayerAction::Dash, GamepadButtonType::South),
                         (PlayerAction::Start, GamepadButtonType::Start),
                         (PlayerAction::Disconnect, GamepadButtonType::Select),
                     ])
@@ -76,6 +71,7 @@ fn join(
                     &mut meshes,
                     &mut materials,
                 );
+
                 // Insert the created player and its gamepad to the hashmap of joined players
                 // Since uniqueness was already checked above, we can insert here unchecked
                 joined_players.0.insert_unique_unchecked(gamepad, player);

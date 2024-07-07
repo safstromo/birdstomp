@@ -4,7 +4,6 @@ use crate::resources::CountdownTimer;
 use crate::sprites::{AnimationIndices, AnimationTimer};
 use crate::{AppState, GameState, BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, TOP_WALL, WALL_THICKNESS};
 use bevy::prelude::*;
-use bevy::sprite::Mesh2dHandle;
 use bevy_rapier2d::prelude::*;
 use leafwing_input_manager::prelude::*;
 
@@ -27,13 +26,13 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
-    player: Player,
-    direction: PlayerDirection,
-    velocity: Velocity,
-    sprite: SpriteSheetBundle,
-    animation_indices: AnimationIndices,
-    animation_timer: AnimationTimer,
-    input_manager: InputManagerBundle<PlayerAction>,
+    pub player: Player,
+    pub direction: PlayerDirection,
+    pub velocity: Velocity,
+    pub sprite: SpriteSheetBundle,
+    pub animation_indices: AnimationIndices,
+    pub animation_timer: AnimationTimer,
+    pub input_manager: InputManagerBundle<PlayerAction>,
 }
 
 impl Default for PlayerBundle {
@@ -89,7 +88,7 @@ pub fn spawn_player(
     let texture = asset_server.load("duckyatlas.png");
     // let texture_atlas =
     //     TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 5, 3, None, None);
-    let layout = TextureAtlasLayout::from_grid(Vec2::new(64.0, 64.0), 5, 3, None, None);
+    let layout = TextureAtlasLayout::from_grid(UVec2::new(64, 64), 5, 3, None, None);
     let texture_atlas_layout = texture_atlases_layouts.add(layout);
     // Use only the subset of sprites in the sheet that make up the run animation
     let animation_indices = AnimationIndices {
@@ -97,13 +96,6 @@ pub fn spawn_player(
         last: 13,
     };
 
-    let triangle = Mesh2dHandle(meshes.add(Triangle2d::new(
-        Vec2::Y * 8.0,
-        Vec2::new(-8.0, -8.0),
-        Vec2::new(8.0, -8.0),
-    )));
-    //Added to ballhandler
-    // let arrow = spawn_indicator(commands, meshes, materials);
     let player = commands
         .spawn(PlayerBundle {
             player: Player {
@@ -134,10 +126,8 @@ pub fn spawn_player(
         .insert(KinematicCharacterController::default())
         .insert(Collider::ball(10.0))
         .insert(ActiveEvents::COLLISION_EVENTS)
+        .insert(GravityScale(0.0))
         .id();
-
-    //added to ballhandler
-    // commands.entity(player).add_child(arrow);
 
     return player;
 }
@@ -180,6 +170,10 @@ fn move_player(
         if action_state.pressed(&PlayerAction::Right) {
             horizontal += 1.0;
             sprite.flip_x = false;
+        }
+
+        if action_state.pressed(&PlayerAction::Dash) {
+            info!("dashed pressesd {:?}", player_transform);
         }
 
         let mut new_player_position_horizontal =
@@ -254,8 +248,8 @@ fn collision_with_enemy(
 
     for (entity, player) in player_query.iter_mut() {
         if let Some(contact_pair) = rapier_context.contact_pair(entity, enemy) {
-            if contact_pair.has_any_active_contacts() {
-                commands.insert_resource(NextState(Some(GameState::Paused)));
+            if contact_pair.has_any_active_contact() {
+                commands.insert_resource(NextState::Pending(GameState::Paused));
 
                 if player.player_id == 0 {
                     p1_lives.lives -= 1;
